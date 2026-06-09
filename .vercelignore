@@ -1,0 +1,4 @@
+# server.js is a local-only dev backend. Excluding it stops Vercel from trying
+# to run it as a serverless function — the live site is the static build only.
+server.js
+README.md
