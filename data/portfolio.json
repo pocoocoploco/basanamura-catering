@@ -1,0 +1,56 @@
+[
+  {
+    "event": {
+      "en": "Family Gathering",
+      "id": "Acara Keluarga"
+    },
+    "pax": {
+      "en": "120 pax",
+      "id": "120 orang"
+    },
+    "menu": {
+      "en": "Arsik, saksang-style menu, sayur, rice, sambal",
+      "id": "Arsik, menu ala saksang, sayur, nasi, sambal"
+    },
+    "note": {
+      "en": "Buffet setup for a Bataknese family celebration.",
+      "id": "Penyajian prasmanan untuk perayaan keluarga Batak."
+    }
+  },
+  {
+    "event": {
+      "en": "Wedding Lunch",
+      "id": "Makan Siang Pernikahan"
+    },
+    "pax": {
+      "en": "500 pax",
+      "id": "500 orang"
+    },
+    "menu": {
+      "en": "Mixed Indonesian buffet with Batak signature dishes",
+      "id": "Prasmanan Indonesia campur dengan hidangan khas Batak"
+    },
+    "note": {
+      "en": "Large-volume service with staggered guest flow.",
+      "id": "Pelayanan skala besar dengan alur tamu bergiliran."
+    }
+  },
+  {
+    "event": {
+      "en": "Office Catering",
+      "id": "Katering Kantor"
+    },
+    "pax": {
+      "en": "80 pax",
+      "id": "80 orang"
+    },
+    "menu": {
+      "en": "Nasi box, grilled chicken, vegetables, sambal",
+      "id": "Nasi kotak, ayam bakar, sayuran, sambal"
+    },
+    "note": {
+      "en": "Simple ordering, clear delivery timing, and flexible packaging.",
+      "id": "Pemesanan mudah, waktu pengiriman jelas, dan kemasan fleksibel."
+    }
+  }
+]

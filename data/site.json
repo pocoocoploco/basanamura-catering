@@ -1,0 +1,20 @@
+{
+  "businessName": "Basanamura Catering",
+  "tagline": {
+    "en": "Bataknese specialty catering for family gatherings, weddings, office events, and community celebrations.",
+    "id": "Katering spesialis masakan Batak untuk acara keluarga, pernikahan, acara kantor, dan perayaan komunitas."
+  },
+  "ownerName": "Your Name",
+  "city": "Jakarta / Jabodetabek",
+  "phoneDisplay": "+62 821-6750-5838",
+  "whatsappNumber": "+6282167505838",
+  "email": "basanacitra@gmail.com",
+  "instagram": "https://instagram.com/",
+  "minimumPax": 30,
+  "maxPax": 500,
+  "heroImage": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Arsik_Ikan_Mas_2.jpg",
+  "heroImageCredit": {
+    "en": "Arsik image by Gunawan Kartapranata, CC BY-SA 4.0, via Wikimedia Commons. Replace with your own photo before serious launch.",
+    "id": "Foto arsik oleh Gunawan Kartapranata, CC BY-SA 4.0, via Wikimedia Commons. Ganti dengan foto Anda sendiri sebelum peluncuran resmi."
+  }
+}

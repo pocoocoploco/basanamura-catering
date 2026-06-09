@@ -1,0 +1,101 @@
+[
+  {
+    "name": "Arsik Ikan Mas",
+    "category": {
+      "en": "Bataknese Signature",
+      "id": "Khas Batak"
+    },
+    "description": {
+      "en": "Golden carp cooked with andaliman, torch ginger, turmeric, long beans, and rich Batak spices.",
+      "id": "Ikan mas dimasak dengan andaliman, kecombrang, kunyit, kacang panjang, dan bumbu Batak yang kaya."
+    },
+    "serving": {
+      "en": "Tray or full-event catering",
+      "id": "Per nampan atau katering acara penuh"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Arsik_Ikan_Mas_2.jpg"
+  },
+  {
+    "name": "Naniura",
+    "category": {
+      "en": "Bataknese Signature",
+      "id": "Khas Batak"
+    },
+    "description": {
+      "en": "Fresh Batak-style cured fish with bright spice, citrus, and andaliman notes.",
+      "id": "Ikan segar ala Batak yang diasinkan dengan bumbu segar, jeruk, dan aroma andaliman."
+    },
+    "serving": {
+      "en": "Best for family tables and special requests",
+      "id": "Cocok untuk meja keluarga dan permintaan khusus"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Arsik_Ikan_Mas_1.jpg"
+  },
+  {
+    "name": "Tombur",
+    "category": {
+      "en": "Bataknese Signature",
+      "id": "Khas Batak"
+    },
+    "description": {
+      "en": "Smoky grilled fish or chicken with spicy tombur sauce, prepared for sharing.",
+      "id": "Ikan atau ayam bakar dengan saus tombur pedas, disajikan untuk berbagi."
+    },
+    "serving": {
+      "en": "Packed meals or buffet",
+      "id": "Nasi kotak atau prasmanan"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ikan_Bakar.jpg"
+  },
+  {
+    "name": "Nasi Tumpeng",
+    "category": {
+      "en": "Indonesian Events",
+      "id": "Acara Indonesia"
+    },
+    "description": {
+      "en": "Celebration rice cone with Indonesian side dishes, suitable for birthdays and office events.",
+      "id": "Nasi tumpeng perayaan dengan aneka lauk Indonesia, cocok untuk ulang tahun dan acara kantor."
+    },
+    "serving": {
+      "en": "Small, medium, and large sets",
+      "id": "Paket kecil, sedang, dan besar"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nasi_Tumpeng.jpg"
+  },
+  {
+    "name": "Sate Padang",
+    "category": {
+      "en": "Indonesian Events",
+      "id": "Acara Indonesia"
+    },
+    "description": {
+      "en": "Savory skewers with thick Padang-style sauce for buffet stations or lunch boxes.",
+      "id": "Sate gurih dengan kuah kental ala Padang untuk stasiun prasmanan atau nasi kotak."
+    },
+    "serving": {
+      "en": "Buffet or boxed meal add-on",
+      "id": "Tambahan prasmanan atau nasi kotak"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sate_padang_240307-092636_cmp.jpg"
+  },
+  {
+    "name": {
+      "en": "Custom Indonesian Menu",
+      "id": "Menu Indonesia Sesuai Permintaan"
+    },
+    "category": {
+      "en": "By Request",
+      "id": "Sesuai Permintaan"
+    },
+    "description": {
+      "en": "Tell us your preferred region, budget, and event style. We can prepare most Indonesian dishes.",
+      "id": "Beri tahu kami daerah, anggaran, dan gaya acara yang Anda inginkan. Kami dapat menyiapkan sebagian besar masakan Indonesia."
+    },
+    "serving": {
+      "en": "From 30 up to 500 pax",
+      "id": "Dari 30 hingga 500 orang"
+    },
+    "image": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ikan_bakar.JPG"
+  }
+]
