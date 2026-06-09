@@ -88,10 +88,7 @@ Because this is static on deployment, orders go through WhatsApp. The local back
 
 The inquiry log (`data/inquiries.jsonl`) is **deliberately excluded** from the static build so customer names and phone numbers are never published.
 
-After your first deploy, update these placeholders to your real domain:
-
-- `og:url`, `og:image`, `twitter:image`, and the `canonical` link in `public/index.html` (currently `https://your-domain.example/`). For the best link previews on WhatsApp and Instagram, host a real ~1200×630 photo and point the image tags at it.
-- The `email` in `data/site.json` (currently the placeholder `hello@basanamuracatering.example`).
+Live at `https://basanamura-catering.vercel.app/`. If the domain changes, update `og:url`, `og:image`, `twitter:image`, and the `canonical` link in `public/index.html` to match. For the best link previews on WhatsApp and Instagram, host a real ~1200×630 photo and point the `og:image` / `twitter:image` tags at it (they currently use a Wikimedia placeholder).
 
 Free domain options:
 
