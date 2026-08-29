@@ -4,10 +4,44 @@ Zero-cost marketing site for a Bataknese and Indonesian catering business. It ha
 
 - Frontend landing page, menu, portfolio, and order inquiry form.
 - Bilingual interface (English / Bahasa Indonesia) with a header toggle.
+- Built-in CMS at `/admin` — edit content and photos with no redeploy.
 - Local Node backend for development and saving test inquiries.
 - Local JSON data files that act as the first database.
 - Static deployment support for free hosting.
 - Social-share metadata (Open Graph / Twitter) and a favicon.
+
+## CMS (edit the site without redeploying)
+
+Open **`/admin`** on the site (production: `https://basanamura-catering.vercel.app/admin`),
+enter the admin password, and edit:
+
+- **Business details** — name, taglines (EN/ID), phone, WhatsApp, email, hero photo.
+- **Menu** — add/remove/reorder dishes, bilingual text, photo upload per dish.
+- **Portfolio** — example events, bilingual text.
+
+Press **Save** and the live site updates within a minute. No redeploy, no Git.
+
+How it works: saves go to Vercel Blob storage via three serverless functions
+(`api/content.js`, `api/save.js`, `api/upload.js`). The public site reads
+`/api/content` at runtime and falls back to the JSON files in `data/` if Blob
+has nothing yet (so the repo files remain the seed/fallback content).
+Uploaded photos are stored on Vercel's CDN with cache-friendly unique URLs.
+
+### One-time production setup (Vercel dashboard)
+
+1. Project → **Storage** → **Create Database** → **Blob** → connect it to the
+   project. This adds the `BLOB_READ_WRITE_TOKEN` environment variable.
+2. Project → **Settings** → **Environment Variables** → add `ADMIN_PASSWORD`
+   (Production) with a strong password of your choice.
+3. Redeploy once (Deployments → ⋯ → Redeploy) so the functions pick up both
+   variables. Until this is done, `/admin` shows a "CMS not configured" message
+   and the site simply serves the bundled JSON content.
+
+### Local development
+
+`npm start`, then open `http://localhost:3000/admin` — the local password is
+`dev` (or set `ADMIN_PASSWORD`). Locally, saves write straight to the files in
+`data/` and photo uploads land in `public/images/uploads/`.
 
 ## Languages (English / Bahasa Indonesia)
 

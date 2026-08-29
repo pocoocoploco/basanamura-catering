@@ -126,12 +126,32 @@ function t(key) {
   return value.replace(/\{(\w+)\}/g, (_, name) => (siteData[name] !== undefined ? siteData[name] : `{${name}}`));
 }
 
-async function loadJson(apiPath, fallbackPath) {
-  const response = await fetch(apiPath).catch(() => null);
-  if (response && response.ok) return response.json();
+async function fetchJson(path) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error(`Failed to load ${path}`);
+  return response.json();
+}
 
-  const fallback = await fetch(fallbackPath);
-  return fallback.json();
+// Live content comes from /api/content (Blob storage in production, local JSON
+// in development). Any key it cannot provide falls back to the JSON files
+// bundled with the site, so the page always renders.
+async function loadContent() {
+  let remote = {};
+  try {
+    const response = await fetch("/api/content", { cache: "no-store" });
+    if (response.ok) remote = await response.json();
+  } catch (error) {
+    // Static fallback below.
+  }
+
+  const orFallback = (value, fallbackPath) =>
+    value ? Promise.resolve(value) : fetchJson(fallbackPath);
+
+  return Promise.all([
+    orFallback(remote.site, dataFallbacks.site),
+    orFallback(remote.menu, dataFallbacks.menu),
+    orFallback(remote.portfolio, dataFallbacks.portfolio)
+  ]);
 }
 
 function whatsappUrl(message) {
@@ -349,11 +369,7 @@ async function init() {
   currentLang = detectLang();
   document.documentElement.lang = currentLang;
 
-  [siteData, menuData, portfolioData] = await Promise.all([
-    loadJson("/api/site", dataFallbacks.site),
-    loadJson("/api/menu", dataFallbacks.menu),
-    loadJson("/api/portfolio", dataFallbacks.portfolio)
-  ]);
+  [siteData, menuData, portfolioData] = await loadContent();
 
   document.title = siteData.businessName;
   document.querySelector("#year").textContent = new Date().getFullYear();
