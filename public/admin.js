@@ -8,10 +8,20 @@ function adminKey() {
   return localStorage.getItem(KEY_STORE) || "";
 }
 
-function setStatus(el, message, ok) {
+function setStatus(el, message, ok, persist) {
   el.textContent = message;
   el.className = `status ${ok ? "ok" : "err"}`;
-  if (ok) setTimeout(() => { if (el.textContent === message) el.textContent = ""; }, 6000);
+  if (ok && !persist) setTimeout(() => { if (el.textContent === message) el.textContent = ""; }, 6000);
+}
+
+// Save buttons light up ("— unsaved!") whenever their section has changes
+// that have not been published yet.
+function flagUnsaved(saveBtn) {
+  if (saveBtn) saveBtn.classList.add("needs-save");
+}
+
+function clearUnsaved(saveBtn) {
+  if (saveBtn) saveBtn.classList.remove("needs-save");
 }
 
 async function api(path, options = {}) {
@@ -59,7 +69,7 @@ async function uploadImage(file) {
   return result.url;
 }
 
-function wireUpload(fileInput, statusEl, onDone) {
+function wireUpload(fileInput, statusEl, onDone, saveBtn) {
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -67,7 +77,8 @@ function wireUpload(fileInput, statusEl, onDone) {
     try {
       const url = await uploadImage(file);
       onDone(url);
-      setStatus(statusEl, "Photo uploaded. Remember to press Save.", true);
+      flagUnsaved(saveBtn);
+      setStatus(statusEl, "Photo uploaded ✓ — now press Save to publish it.", true, true);
     } catch (error) {
       setStatus(statusEl, error.message, false);
     }
@@ -157,7 +168,7 @@ function renderMenu() {
     wireUpload(fileInput, $("#menuStatus"), (url) => {
       $(`[data-f="image"]`, card).value = url;
       thumb.src = url;
-    });
+    }, $("#saveMenu"));
     $(`[data-f="image"]`, card).addEventListener("change", (event) => {
       thumb.src = event.target.value;
     });
@@ -210,6 +221,10 @@ function collectPortfolio() {
   }));
 }
 
+function saveBtnFor(name) {
+  return $(name === "menu" ? "#saveMenu" : "#savePortfolio");
+}
+
 function moveItem(name, index, delta) {
   const items = name === "menu" ? collectMenu() : collectPortfolio();
   const target = index + delta;
@@ -217,6 +232,7 @@ function moveItem(name, index, delta) {
   [items[index], items[target]] = [items[target], items[index]];
   content[name] = items;
   (name === "menu" ? renderMenu : renderPortfolio)();
+  flagUnsaved(saveBtnFor(name));
 }
 
 function removeItem(name, index) {
@@ -224,6 +240,7 @@ function removeItem(name, index) {
   items.splice(index, 1);
   content[name] = items;
   (name === "menu" ? renderMenu : renderPortfolio)();
+  flagUnsaved(saveBtnFor(name));
 }
 
 // ---- Site form ----
@@ -256,7 +273,7 @@ function collectSite() {
 
 // ---- Save ----
 
-async function save(name, data, statusEl) {
+async function save(name, data, statusEl, saveBtn) {
   try {
     await api("/api/save", {
       method: "POST",
@@ -264,6 +281,7 @@ async function save(name, data, statusEl) {
       body: JSON.stringify({ name, data })
     });
     content[name] = data;
+    clearUnsaved(saveBtn);
     setStatus(statusEl, "Saved ✓ — the live site updates within a minute.", true);
   } catch (error) {
     setStatus(statusEl, error.message, false);
@@ -337,7 +355,7 @@ async function init() {
     showLocked("Signed out.");
   });
 
-  $("#saveSite").addEventListener("click", () => save("site", collectSite(), $("#siteStatus")));
+  $("#saveSite").addEventListener("click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
   $("#saveMenu").addEventListener("click", () => {
     const menu = collectMenu();
     const missing = menu.findIndex((item) => !biVal(item.name).en);
@@ -345,25 +363,32 @@ async function init() {
       setStatus($("#menuStatus"), `Dish ${missing + 1} needs a name.`, false);
       return;
     }
-    save("menu", menu, $("#menuStatus"));
+    save("menu", menu, $("#menuStatus"), $("#saveMenu"));
   });
-  $("#savePortfolio").addEventListener("click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus")));
+  $("#savePortfolio").addEventListener("click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus"), $("#savePortfolio")));
 
   $("#addMenu").addEventListener("click", () => {
     content.menu = collectMenu();
     content.menu.push({ name: "", category: "", description: "", serving: "", image: "" });
     renderMenu();
+    flagUnsaved($("#saveMenu"));
   });
   $("#addPortfolio").addEventListener("click", () => {
     content.portfolio = collectPortfolio();
     content.portfolio.push({ event: "", pax: "", menu: "", note: "" });
     renderPortfolio();
+    flagUnsaved($("#savePortfolio"));
   });
+
+  // Any typing inside a section lights up that section's Save button.
+  $("#sectionSite").addEventListener("input", () => flagUnsaved($("#saveSite")));
+  $("#sectionMenu").addEventListener("input", () => flagUnsaved($("#saveMenu")));
+  $("#sectionPortfolio").addEventListener("input", () => flagUnsaved($("#savePortfolio")));
 
   wireUpload($("#heroUpload"), $("#siteStatus"), (url) => {
     $("#site-heroImage").value = url;
     $("#heroPreview").src = url;
-  });
+  }, $("#saveSite"));
   $("#site-heroImage").addEventListener("change", (event) => {
     $("#heroPreview").src = event.target.value;
   });

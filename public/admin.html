@@ -104,6 +104,12 @@
       button.ghost { background: #fff; color: var(--deep-red); border: 1px solid var(--line); }
       button.gold { background: var(--gold); color: #111; }
       button:disabled { opacity: 0.5; cursor: default; }
+      button.needs-save {
+        background: var(--gold);
+        color: #111;
+        box-shadow: 0 0 0 3px rgba(215, 25, 32, 0.3);
+      }
+      button.needs-save::after { content: " — unsaved!"; }
       .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
       .status { font-size: 0.86rem; font-weight: 700; min-height: 20px; margin: 0; }
       .status.ok { color: var(--ok); }
@@ -136,7 +142,7 @@
       </section>
 
       <div id="editor" hidden>
-        <section>
+        <section id="sectionSite">
           <h2>Business details</h2>
           <p class="hint">Contact info and the big photo at the top of the site.</p>
           <div class="stack">
@@ -176,7 +182,7 @@
           </div>
         </section>
 
-        <section>
+        <section id="sectionMenu">
           <h2>Menu</h2>
           <p class="hint">Dishes shown in the Menu section. Leave an Indonesian field empty to reuse the English text.</p>
           <div id="menuList"></div>
@@ -187,7 +193,7 @@
           </div>
         </section>
 
-        <section>
+        <section id="sectionPortfolio">
           <h2>Portfolio</h2>
           <p class="hint">Example events shown in the Portfolio section.</p>
           <div id="portfolioList"></div>
