@@ -64,6 +64,7 @@
       }
       .login-card h1 { margin: 0; font-size: 1.3rem; color: var(--deep-red); }
       .login-card .sub { margin: -10px 0 4px; color: var(--muted); font-size: 0.9rem; }
+      .login-card .ver { margin: 0; color: #c9bfbf; font-size: 0.7rem; }
       .login-card label { width: 100%; text-align: left; }
       .login-card button { width: 100%; }
 
@@ -268,6 +269,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
+        <p class="ver">Admin v4</p>
       </div>
     </div>
 
@@ -363,6 +365,20 @@
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=3"></script>
+    <script src="/admin.js?v=4"></script>
+    <script>
+      // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
+      // (old browser, network error, stale cache), say so instead of a dead page.
+      setTimeout(function () {
+        if (!window.__adminReady) {
+          var status = document.getElementById("lockStatus");
+          if (status) {
+            status.textContent =
+              "The admin script could not start on this browser. Refresh the page; if it keeps happening, try Chrome, or tell the developer.";
+            status.className = "status err";
+          }
+        }
+      }, 3000);
+    </script>
   </body>
 </html>

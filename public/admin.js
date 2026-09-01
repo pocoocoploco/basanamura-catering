@@ -27,13 +27,15 @@ function navItemFor(saveBtn) {
 function flagUnsaved(saveBtn) {
   if (!saveBtn) return;
   saveBtn.classList.add("needs-save");
-  navItemFor(saveBtn)?.classList.add("has-unsaved");
+  const navItem = navItemFor(saveBtn);
+  if (navItem) navItem.classList.add("has-unsaved");
 }
 
 function clearUnsaved(saveBtn) {
   if (!saveBtn) return;
   saveBtn.classList.remove("needs-save");
-  navItemFor(saveBtn)?.classList.remove("has-unsaved");
+  const navItem = navItemFor(saveBtn);
+  if (navItem) navItem.classList.remove("has-unsaved");
 }
 
 // ---- View navigation (left sidebar) ----
@@ -289,8 +291,8 @@ function fillSite() {
   siteFields.forEach((field) => {
     $(`#site-${field}`).value = site[field] == null ? "" : site[field];
   });
-  $("#site-minimumPax").value = site.minimumPax ?? "";
-  $("#site-maxPax").value = site.maxPax ?? "";
+  $("#site-minimumPax").value = site.minimumPax == null ? "" : site.minimumPax;
+  $("#site-maxPax").value = site.maxPax == null ? "" : site.maxPax;
   const tagline = biVal(site.tagline);
   $("#site-tagline-en").value = tagline.en;
   $("#site-tagline-id").value = tagline.id;
@@ -388,20 +390,29 @@ function setEditingEnabled(enabled) {
   });
 }
 
+// Attach a listener only if the element exists, so one stale cached file can
+// never leave the whole page dead.
+function on(selector, eventName, handler) {
+  const element = $(selector);
+  if (element) element.addEventListener(eventName, handler);
+}
+
 // All wiring is synchronous — no network request happens before the controls
-// respond. Every lookup is null-guarded so one stale cached file can never
-// leave the whole page dead.
+// respond.
 function wireUi() {
-  $("#unlockBtn")?.addEventListener("click", () => {
+  on("#unlockBtn", "click", () => {
     const value = $("#passwordInput").value;
-    if (!value) return;
+    if (!value) {
+      setStatus($("#lockStatus"), "Please enter the password first.", false);
+      return;
+    }
     localStorage.setItem(KEY_STORE, value);
     tryUnlock();
   });
-  $("#passwordInput")?.addEventListener("keydown", (event) => {
+  on("#passwordInput", "keydown", (event) => {
     if (event.key === "Enter") $("#unlockBtn").click();
   });
-  $("#lockBtn")?.addEventListener("click", () => {
+  on("#lockBtn", "click", () => {
     localStorage.removeItem(KEY_STORE);
     $("#passwordInput").value = "";
     showLocked();
@@ -411,11 +422,11 @@ function wireUi() {
   document.querySelectorAll(".side-nav button").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
-  $("#menuToggle")?.addEventListener("click", openDrawer);
-  $("#backdrop")?.addEventListener("click", closeDrawer);
+  on("#menuToggle", "click", openDrawer);
+  on("#backdrop", "click", closeDrawer);
 
-  $("#saveSite")?.addEventListener("click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
-  $("#saveMenu")?.addEventListener("click", () => {
+  on("#saveSite", "click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
+  on("#saveMenu", "click", () => {
     const menu = collectMenu();
     const missing = menu.findIndex((item) => !biVal(item.name).en);
     if (missing !== -1) {
@@ -424,15 +435,15 @@ function wireUi() {
     }
     save("menu", menu, $("#menuStatus"), $("#saveMenu"));
   });
-  $("#savePortfolio")?.addEventListener("click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus"), $("#savePortfolio")));
+  on("#savePortfolio", "click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus"), $("#savePortfolio")));
 
-  $("#addMenu")?.addEventListener("click", () => {
+  on("#addMenu", "click", () => {
     content.menu = collectMenu();
     content.menu.push({ name: "", category: "", description: "", serving: "", image: "" });
     renderMenu();
     flagUnsaved($("#saveMenu"));
   });
-  $("#addPortfolio")?.addEventListener("click", () => {
+  on("#addPortfolio", "click", () => {
     content.portfolio = collectPortfolio();
     content.portfolio.push({ event: "", pax: "", menu: "", note: "" });
     renderPortfolio();
@@ -440,9 +451,9 @@ function wireUi() {
   });
 
   // Any typing inside a section lights up that section's Save button.
-  $("#sectionSite")?.addEventListener("input", () => flagUnsaved($("#saveSite")));
-  $("#sectionMenu")?.addEventListener("input", () => flagUnsaved($("#saveMenu")));
-  $("#sectionPortfolio")?.addEventListener("input", () => flagUnsaved($("#savePortfolio")));
+  on("#sectionSite", "input", () => flagUnsaved($("#saveSite")));
+  on("#sectionMenu", "input", () => flagUnsaved($("#saveMenu")));
+  on("#sectionPortfolio", "input", () => flagUnsaved($("#savePortfolio")));
 
   const heroUpload = $("#heroUpload");
   if (heroUpload) {
@@ -451,9 +462,16 @@ function wireUi() {
       $("#heroPreview").src = url;
     }, $("#saveSite"));
   }
-  $("#site-heroImage")?.addEventListener("change", (event) => {
+  on("#site-heroImage", "change", (event) => {
     $("#heroPreview").src = event.target.value;
   });
+
+  // Surface any unexpected script error on the login card instead of failing
+  // silently, and tell the load watchdog in admin.html that we are alive.
+  window.addEventListener("error", (event) => {
+    setStatus($("#lockStatus"), `Something went wrong: ${event.message || "script error"}. Refresh the page.`, false);
+  });
+  window.__adminReady = true;
 }
 
 async function init() {

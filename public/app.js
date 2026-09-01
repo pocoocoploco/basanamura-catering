@@ -116,13 +116,18 @@ function detectLang() {
 // { en, id } objects resolve to the active language (falling back to English).
 function pick(value) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value[currentLang] ?? value.en ?? Object.values(value)[0] ?? "";
+    if (value[currentLang] != null) return value[currentLang];
+    if (value.en != null) return value.en;
+    const first = Object.values(value)[0];
+    return first == null ? "" : first;
   }
   return value;
 }
 
 function t(key) {
-  const value = ui[currentLang][key] ?? ui.en[key] ?? "";
+  let value = ui[currentLang][key];
+  if (value == null) value = ui.en[key];
+  if (value == null) value = "";
   return value.replace(/\{(\w+)\}/g, (_, name) => (siteData[name] !== undefined ? siteData[name] : `{${name}}`));
 }
 
