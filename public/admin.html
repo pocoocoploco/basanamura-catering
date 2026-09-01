@@ -22,6 +22,9 @@
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; }
+      /* The login/portal swap relies on the hidden attribute; it must beat any
+         author display rule (grid/flex) or the views never visually switch. */
+      [hidden] { display: none !important; }
       body {
         background: var(--paper);
         color: var(--ink);
@@ -269,7 +272,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v4</p>
+        <p class="ver">Admin v5</p>
       </div>
     </div>
 
