@@ -15,13 +15,49 @@ function setStatus(el, message, ok, persist) {
 }
 
 // Save buttons light up ("— unsaved!") whenever their section has changes
-// that have not been published yet.
+// that have not been published yet; the sidebar shows a dot on that view.
+const BTN_VIEW = { saveSite: "site", saveMenu: "menu", savePortfolio: "portfolio" };
+
+function navItemFor(saveBtn) {
+  const view = saveBtn && BTN_VIEW[saveBtn.id];
+  return view ? $(`.side-nav button[data-view="${view}"]`) : null;
+}
+
 function flagUnsaved(saveBtn) {
-  if (saveBtn) saveBtn.classList.add("needs-save");
+  if (!saveBtn) return;
+  saveBtn.classList.add("needs-save");
+  navItemFor(saveBtn)?.classList.add("has-unsaved");
 }
 
 function clearUnsaved(saveBtn) {
-  if (saveBtn) saveBtn.classList.remove("needs-save");
+  if (!saveBtn) return;
+  saveBtn.classList.remove("needs-save");
+  navItemFor(saveBtn)?.classList.remove("has-unsaved");
+}
+
+// ---- View navigation (left sidebar) ----
+
+const VIEW_TITLES = { site: "Business details", menu: "Menu", portfolio: "Portfolio" };
+
+function setView(view) {
+  document.querySelectorAll("section[data-view]").forEach((section) => {
+    section.hidden = section.dataset.view !== view;
+  });
+  document.querySelectorAll(".side-nav button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  $("#viewTitle").textContent = VIEW_TITLES[view] || "";
+  closeDrawer();
+}
+
+function openDrawer() {
+  $("#sidebar").classList.add("open");
+  $("#backdrop").classList.add("show");
+}
+
+function closeDrawer() {
+  $("#sidebar").classList.remove("open");
+  $("#backdrop").classList.remove("show");
 }
 
 async function api(path, options = {}) {
@@ -292,18 +328,13 @@ async function save(name, data, statusEl, saveBtn) {
 // ---- Lock / unlock ----
 
 function showUnlocked() {
-  $("#editor").hidden = false;
-  $("#passwordInput").hidden = true;
-  $("#unlockBtn").hidden = true;
-  $("#lockBtn").hidden = false;
-  setStatus($("#lockStatus"), "Unlocked.", true);
+  $("#loginView").hidden = true;
+  $("#appShell").hidden = false;
 }
 
 function showLocked(message) {
-  $("#editor").hidden = true;
-  $("#passwordInput").hidden = false;
-  $("#unlockBtn").hidden = false;
-  $("#lockBtn").hidden = true;
+  $("#appShell").hidden = true;
+  $("#loginView").hidden = false;
   if (message) setStatus($("#lockStatus"), message, false);
 }
 
@@ -335,6 +366,11 @@ async function loadContent() {
 }
 
 async function init() {
+  // Returning session: show the portal immediately (no login flash); the key
+  // is still verified against the server below and we fall back to the login
+  // screen if it no longer works.
+  if (adminKey()) showUnlocked();
+
   await loadContent();
   fillSite();
   renderMenu();
@@ -352,8 +388,15 @@ async function init() {
   $("#lockBtn").addEventListener("click", () => {
     localStorage.removeItem(KEY_STORE);
     $("#passwordInput").value = "";
-    showLocked("Signed out.");
+    showLocked();
+    setStatus($("#lockStatus"), "Signed out.", true, true);
   });
+
+  document.querySelectorAll(".side-nav button").forEach((button) => {
+    button.addEventListener("click", () => setView(button.dataset.view));
+  });
+  $("#menuToggle").addEventListener("click", openDrawer);
+  $("#backdrop").addEventListener("click", closeDrawer);
 
   $("#saveSite").addEventListener("click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
   $("#saveMenu").addEventListener("click", () => {
