@@ -309,10 +309,12 @@ function setupForm() {
       `${t("wa_message")}: ${data.message || "-"}`
     ].join("\n");
 
+    // keepalive lets the save finish even though we navigate to WhatsApp next.
     fetch("/api/inquiries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ ...data, lang: currentLang }),
+      keepalive: true
     }).catch(() => {});
 
     status.textContent = t("status_opening");

@@ -186,23 +186,75 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "POST" && url.pathname === "/api/inquiries") {
-    try {
-      const payload = JSON.parse((await collectBody(req)).toString("utf8"));
-      const inquiry = {
-        createdAt: new Date().toISOString(),
-        name: String(payload.name || "").trim(),
-        phone: String(payload.phone || "").trim(),
-        eventDate: String(payload.eventDate || "").trim(),
-        pax: String(payload.pax || "").trim(),
-        message: String(payload.message || "").trim()
-      };
+  // ---- Inquiries (mirrors api/inquiries.js; local storage is a .jsonl file) ----
+  if (url.pathname === "/api/inquiries") {
+    const inquiriesFile = path.join(dataDir, "inquiries.jsonl");
+    const readInquiries = () => {
+      if (!fs.existsSync(inquiriesFile)) return [];
+      return fs
+        .readFileSync(inquiriesFile, "utf8")
+        .split("\n")
+        .filter((line) => line.trim())
+        .map((line) => {
+          try {
+            return JSON.parse(line);
+          } catch (error) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+    };
 
-      fs.appendFileSync(path.join(dataDir, "inquiries.jsonl"), `${JSON.stringify(inquiry)}\n`);
-      send(res, 201, JSON.stringify({ ok: true }));
-    } catch (error) {
-      send(res, 400, JSON.stringify({ ok: false, message: "Invalid inquiry" }));
+    if (req.method === "POST") {
+      try {
+        const payload = JSON.parse((await collectBody(req)).toString("utf8"));
+        const inquiry = {
+          createdAt: new Date().toISOString(),
+          name: String(payload.name || "").trim().slice(0, 120),
+          phone: String(payload.phone || "").trim().slice(0, 60),
+          eventDate: String(payload.eventDate || "").trim().slice(0, 40),
+          pax: String(payload.pax || "").trim().slice(0, 20),
+          message: String(payload.message || "").trim().slice(0, 2000),
+          lang: String(payload.lang || "").trim().slice(0, 8)
+        };
+        if (!inquiry.name && !inquiry.phone) {
+          sendJson(res, 400, { ok: false, message: "Empty inquiry." });
+          return;
+        }
+        fs.appendFileSync(inquiriesFile, `${JSON.stringify(inquiry)}\n`);
+        sendJson(res, 201, { ok: true });
+      } catch (error) {
+        sendJson(res, 400, { ok: false, message: "Invalid inquiry" });
+      }
+      return;
     }
+
+    if (!authed(req)) {
+      sendJson(res, 401, { ok: false, message: "Wrong password." });
+      return;
+    }
+
+    if (req.method === "GET") {
+      const inquiries = readInquiries()
+        .map((item) => ({ id: item.createdAt, ...item }))
+        .reverse();
+      sendJson(res, 200, { ok: true, total: inquiries.length, inquiries });
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      try {
+        const { id } = JSON.parse((await collectBody(req)).toString("utf8"));
+        const kept = readInquiries().filter((item) => item.createdAt !== id);
+        fs.writeFileSync(inquiriesFile, kept.map((item) => JSON.stringify(item)).join("\n") + (kept.length ? "\n" : ""));
+        sendJson(res, 200, { ok: true });
+      } catch (error) {
+        sendJson(res, 400, { ok: false, message: "Invalid body." });
+      }
+      return;
+    }
+
+    sendJson(res, 405, { ok: false, message: "Method not allowed." });
     return;
   }
 

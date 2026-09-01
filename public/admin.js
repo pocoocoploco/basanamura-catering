@@ -51,7 +51,13 @@ function clearUnsaved(saveBtn) {
 
 // ---- View navigation (left sidebar) ----
 
-const VIEW_TITLES = { site: "Business details", menu: "Menu", portfolio: "Portfolio", appearance: "Appearance" };
+const VIEW_TITLES = {
+  site: "Business details",
+  menu: "Menu",
+  portfolio: "Portfolio",
+  appearance: "Appearance",
+  inquiries: "Inquiries"
+};
 
 function setView(view) {
   document.querySelectorAll("section[data-view]").forEach((section) => {
@@ -62,6 +68,7 @@ function setView(view) {
   });
   $("#viewTitle").textContent = VIEW_TITLES[view] || "";
   closeDrawer();
+  if (view === "inquiries" && !inquiriesLoaded) loadInquiries();
 }
 
 function openDrawer() {
@@ -347,6 +354,133 @@ function collectTheme() {
   return theme;
 }
 
+// ---- Inquiries (read-only list of submitted order forms) ----
+
+let inquiriesLoaded = false;
+
+function formatWhen(iso) {
+  const date = new Date(iso);
+  if (isNaN(date)) return String(iso || "");
+  return date.toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function waLinkFor(phone) {
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return null;
+  // Indonesian local numbers (08…) become international (628…).
+  if (digits.charAt(0) === "0") digits = "62" + digits.slice(1);
+  return `https://wa.me/${digits}`;
+}
+
+// All inquiry values are customer-submitted: only ever rendered via
+// textContent, never innerHTML.
+function renderInquiries(items) {
+  const listEl = $("#inquiriesList");
+  listEl.innerHTML = "";
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "hint";
+    empty.textContent = "No inquiries yet. New submissions from the website form will appear here.";
+    listEl.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
+
+    const head = document.createElement("div");
+    head.className = "inq-head";
+    const who = document.createElement("strong");
+    who.textContent = item.name || "(no name)";
+    const when = document.createElement("span");
+    when.className = "inq-when";
+    when.textContent = formatWhen(item.createdAt);
+    head.appendChild(who);
+    head.appendChild(when);
+    card.appendChild(head);
+
+    const fields = document.createElement("div");
+    fields.className = "inq-fields";
+    const addField = (label, value, href) => {
+      if (!value) return;
+      const span = document.createElement("span");
+      span.textContent = `${label}: `;
+      if (href) {
+        const link = document.createElement("a");
+        link.href = href;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = value;
+        span.appendChild(link);
+      } else {
+        span.appendChild(document.createTextNode(value));
+      }
+      fields.appendChild(span);
+    };
+    addField("Phone", item.phone, waLinkFor(item.phone));
+    addField("Event date", item.eventDate);
+    addField("Pax", item.pax);
+    addField("Form language", item.lang === "id" ? "Indonesian" : item.lang === "en" ? "English" : "");
+    card.appendChild(fields);
+
+    if (item.message) {
+      const message = document.createElement("p");
+      message.className = "inq-message";
+      message.textContent = item.message;
+      card.appendChild(message);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "small ghost";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", async () => {
+      if (!window.confirm("Delete this inquiry permanently?")) return;
+      remove.disabled = true;
+      try {
+        await api("/api/inquiries", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.id })
+        });
+        card.remove();
+        if (!listEl.children.length) renderInquiries([]);
+      } catch (error) {
+        remove.disabled = false;
+        setStatus($("#inquiriesStatus"), error.message, false);
+      }
+    });
+    actions.appendChild(remove);
+    card.appendChild(actions);
+
+    listEl.appendChild(card);
+  });
+}
+
+async function loadInquiries() {
+  const status = $("#inquiriesStatus");
+  setStatus(status, "Loading…", true);
+  try {
+    const result = await api("/api/inquiries");
+    const inquiries = result.inquiries || [];
+    renderInquiries(inquiries);
+    setStatus(status, inquiries.length === 1 ? "1 inquiry." : `${inquiries.length} inquiries.`, true, true);
+    inquiriesLoaded = true;
+  } catch (error) {
+    setStatus(status, error.message, false);
+    if (error.status === 401) showLocked("Session expired — enter the password again.");
+  }
+}
+
 // ---- Save ----
 
 async function save(name, data, statusEl, saveBtn) {
@@ -487,6 +621,8 @@ function wireUi() {
     renderPortfolio();
     flagUnsaved($("#savePortfolio"));
   });
+
+  on("#refreshInquiries", "click", loadInquiries);
 
   on("#saveTheme", "click", () => save("theme", collectTheme(), $("#themeStatus"), $("#saveTheme")));
   on("#resetTheme", "click", () => {

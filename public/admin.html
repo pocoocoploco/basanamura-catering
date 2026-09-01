@@ -238,6 +238,22 @@
       .status.err { color: var(--red); }
       .upload-btn { position: relative; overflow: hidden; display: inline-flex; }
       .upload-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+      .inq-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+      .inq-head strong { color: var(--deep-red); }
+      .inq-when { color: var(--muted); font-size: 0.78rem; }
+      .inq-fields { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.88rem; }
+      .inq-fields a { color: var(--deep-red); font-weight: 700; text-decoration: none; }
+      .inq-fields a:hover { text-decoration: underline; }
+      .inq-message {
+        margin: 0;
+        padding: 10px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 0.92rem;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
 
       /* ---------- Mobile ---------- */
       .backdrop {
@@ -277,7 +293,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v6</p>
+        <p class="ver">Admin v7</p>
       </div>
     </div>
 
@@ -296,6 +312,7 @@
           <button type="button" data-view="menu">Menu <span class="dot"></span></button>
           <button type="button" data-view="portfolio">Portfolio <span class="dot"></span></button>
           <button type="button" data-view="appearance">Appearance <span class="dot"></span></button>
+          <button type="button" data-view="inquiries">Inquiries <span class="dot"></span></button>
         </nav>
         <div class="side-footer">
           <a href="/" target="_blank" rel="noopener">View site ↗</a>
@@ -370,6 +387,15 @@
             </div>
           </section>
 
+          <section id="sectionInquiries" data-view="inquiries" hidden>
+            <p class="hint">Order inquiries submitted through the website form, newest first. Customers are also sent to WhatsApp when they submit — this list is your backup record.</p>
+            <div class="row" style="margin-top: 0;">
+              <button id="refreshInquiries" type="button" class="ghost">Refresh</button>
+              <p class="status" id="inquiriesStatus"></p>
+            </div>
+            <div id="inquiriesList"></div>
+          </section>
+
           <section id="sectionTheme" data-view="appearance" hidden>
             <p class="hint">Colours and layout of the public site. Press Save, then refresh the site to see the new look (up to a minute).</p>
             <div class="stack">
@@ -417,7 +443,7 @@
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=5"></script>
+    <script src="/admin.js?v=6"></script>
     <script>
       // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
       // (old browser, network error, stale cache), say so instead of a dead page.
