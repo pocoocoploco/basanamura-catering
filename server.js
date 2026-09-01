@@ -99,7 +99,8 @@ const server = http.createServer(async (req, res) => {
     sendJson(res, 200, {
       site: JSON.parse(readJson("site.json")),
       menu: JSON.parse(readJson("menu.json")),
-      portfolio: JSON.parse(readJson("portfolio.json"))
+      portfolio: JSON.parse(readJson("portfolio.json")),
+      theme: JSON.parse(readJson("theme.json"))
     });
     return;
   }
@@ -136,7 +137,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const { name, data } = JSON.parse((await collectBody(req)).toString("utf8"));
       const valid =
-        (name === "site" && data && typeof data === "object" && !Array.isArray(data)) ||
+        (["site", "theme"].includes(name) && data && typeof data === "object" && !Array.isArray(data)) ||
         (["menu", "portfolio"].includes(name) && Array.isArray(data));
       if (!valid) {
         sendJson(res, 400, { ok: false, message: "Invalid content payload." });

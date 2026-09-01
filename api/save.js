@@ -1,11 +1,11 @@
 const { put } = require("@vercel/blob");
 const { authed, readJsonBody } = require("./_utils.js");
 
-const NAMES = new Set(["site", "menu", "portfolio"]);
+const NAMES = new Set(["site", "menu", "portfolio", "theme"]);
 const MAX_CHARS = 300_000;
 
 function validShape(name, data) {
-  if (name === "site") {
+  if (name === "site" || name === "theme") {
     return data && typeof data === "object" && !Array.isArray(data);
   }
   return Array.isArray(data);

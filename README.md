@@ -18,6 +18,9 @@ enter the admin password, and edit:
 - **Business details** — name, taglines (EN/ID), phone, WhatsApp, email, hero photo.
 - **Menu** — add/remove/reorder dishes, bilingual text, photo upload per dish.
 - **Portfolio** — example events, bilingual text.
+- **Appearance** — site colours (main, accent, headings, background, footer),
+  cards per row for menu/portfolio, and hero text position, with a
+  reset-to-original-design button. Defaults live in `data/theme.json`.
 
 Press **Save** and the live site updates within a minute. No redeploy, no Git.
 

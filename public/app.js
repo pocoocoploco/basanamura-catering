@@ -1,7 +1,8 @@
 const dataFallbacks = {
   site: "/data/site.json",
   menu: "/data/menu.json",
-  portfolio: "/data/portfolio.json"
+  portfolio: "/data/portfolio.json",
+  theme: "/data/theme.json"
 };
 
 const SUPPORTED_LANGS = ["en", "id"];
@@ -149,13 +150,14 @@ async function loadContent() {
     // Static fallback below.
   }
 
-  const orFallback = (value, fallbackPath) =>
-    value ? Promise.resolve(value) : fetchJson(fallbackPath);
+  const orFallback = (value, fallbackPath, defaultValue) =>
+    value ? Promise.resolve(value) : fetchJson(fallbackPath).catch(() => defaultValue);
 
   return Promise.all([
-    orFallback(remote.site, dataFallbacks.site),
-    orFallback(remote.menu, dataFallbacks.menu),
-    orFallback(remote.portfolio, dataFallbacks.portfolio)
+    orFallback(remote.site, dataFallbacks.site, {}),
+    orFallback(remote.menu, dataFallbacks.menu, []),
+    orFallback(remote.portfolio, dataFallbacks.portfolio, []),
+    orFallback(remote.theme, dataFallbacks.theme, {})
   ]);
 }
 
@@ -370,11 +372,64 @@ function setupScrollExperience() {
   window.addEventListener("resize", updateScrollMotion);
 }
 
+// ---- Theme (set from the admin's Appearance page) ----
+
+function hexToTriplet(hex) {
+  const match = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!match) return null;
+  const n = parseInt(match[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function mixToward(hex, target, amount) {
+  const rgb = hexToTriplet(hex);
+  if (!rgb) return null;
+  return `#${rgb
+    .map((c) => Math.round(c + (target - c) * amount).toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+function applyTheme(theme) {
+  if (!theme || typeof theme !== "object") return;
+  const root = document.documentElement.style;
+  const set = (name, value) => {
+    if (value) root.setProperty(name, value);
+  };
+  const setColor = (name, rgbName, hex) => {
+    const rgb = hexToTriplet(hex);
+    if (!rgb) return;
+    set(name, hex);
+    if (rgbName) set(rgbName, rgb.join(", "));
+  };
+
+  setColor("--color-brand-red", "--brand-rgb", theme.brand);
+  setColor("--color-deep-red", "--deep-rgb", theme.deep);
+  // Darker shade of the heading colour for overlays and depth.
+  setColor("--color-dark-red", "--dark-rgb", mixToward(theme.deep, 0, 0.35));
+  setColor("--color-golden-yellow", "--accent-rgb", theme.accent);
+  setColor("--color-warm-yellow", null, theme.accent);
+  // Pale tints of the accent keep card borders and soft fills in tune.
+  setColor("--color-border-light", null, mixToward(theme.accent, 255, 0.72));
+  setColor("--color-soft-yellow", null, mixToward(theme.accent, 255, 0.84));
+  setColor("--color-paper", null, theme.paper);
+  setColor("--color-footer-blue", null, theme.footer);
+
+  const menuColumns = Number(theme.menuColumns);
+  if (menuColumns >= 1 && menuColumns <= 4) set("--menu-columns", String(menuColumns));
+  const portfolioColumns = Number(theme.portfolioColumns);
+  if (portfolioColumns >= 1 && portfolioColumns <= 4) set("--portfolio-columns", String(portfolioColumns));
+
+  const hero = document.querySelector(".hero");
+  if (hero) hero.classList.toggle("hero-centered", theme.heroAlign === "center");
+}
+
 async function init() {
   currentLang = detectLang();
   document.documentElement.lang = currentLang;
 
-  [siteData, menuData, portfolioData] = await loadContent();
+  let themeData;
+  [siteData, menuData, portfolioData, themeData] = await loadContent();
+  applyTheme(themeData);
 
   document.title = siteData.businessName;
   document.querySelector("#year").textContent = new Date().getFullYear();

@@ -5,7 +5,7 @@ const { list } = require("@vercel/blob");
 // frontend falls back to the JSON files bundled with the site.
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  const out = { site: null, menu: null, portfolio: null };
+  const out = { site: null, menu: null, portfolio: null, theme: null };
 
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     res.status(200).json(out);

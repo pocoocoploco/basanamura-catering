@@ -1,6 +1,17 @@
 const KEY_STORE = "adminKey";
 
-const content = { site: {}, menu: [], portfolio: [] };
+const content = { site: {}, menu: [], portfolio: [], theme: {} };
+
+const DEFAULT_THEME = {
+  brand: "#d71920",
+  accent: "#ffd400",
+  deep: "#8f1116",
+  paper: "#fffaf0",
+  footer: "#3157a4",
+  menuColumns: 3,
+  portfolioColumns: 3,
+  heroAlign: "left"
+};
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 
@@ -17,7 +28,7 @@ function setStatus(el, message, ok, persist) {
 
 // Save buttons light up ("— unsaved!") whenever their section has changes
 // that have not been published yet; the sidebar shows a dot on that view.
-const BTN_VIEW = { saveSite: "site", saveMenu: "menu", savePortfolio: "portfolio" };
+const BTN_VIEW = { saveSite: "site", saveMenu: "menu", savePortfolio: "portfolio", saveTheme: "appearance" };
 
 function navItemFor(saveBtn) {
   const view = saveBtn && BTN_VIEW[saveBtn.id];
@@ -40,7 +51,7 @@ function clearUnsaved(saveBtn) {
 
 // ---- View navigation (left sidebar) ----
 
-const VIEW_TITLES = { site: "Business details", menu: "Menu", portfolio: "Portfolio" };
+const VIEW_TITLES = { site: "Business details", menu: "Menu", portfolio: "Portfolio", appearance: "Appearance" };
 
 function setView(view) {
   document.querySelectorAll("section[data-view]").forEach((section) => {
@@ -310,6 +321,32 @@ function collectSite() {
   return site;
 }
 
+// ---- Appearance form ----
+
+const THEME_COLOR_FIELDS = ["brand", "accent", "deep", "paper", "footer"];
+
+function fillTheme(theme) {
+  const merged = { ...DEFAULT_THEME, ...(theme || {}) };
+  THEME_COLOR_FIELDS.forEach((field) => {
+    const value = /^#[0-9a-fA-F]{6}$/.test(String(merged[field])) ? merged[field] : DEFAULT_THEME[field];
+    $(`#theme-${field}`).value = value;
+  });
+  $("#theme-heroAlign").value = merged.heroAlign === "center" ? "center" : "left";
+  $("#theme-menuColumns").value = String([2, 3, 4].includes(Number(merged.menuColumns)) ? merged.menuColumns : 3);
+  $("#theme-portfolioColumns").value = String([2, 3].includes(Number(merged.portfolioColumns)) ? merged.portfolioColumns : 3);
+}
+
+function collectTheme() {
+  const theme = {};
+  THEME_COLOR_FIELDS.forEach((field) => {
+    theme[field] = $(`#theme-${field}`).value;
+  });
+  theme.heroAlign = $("#theme-heroAlign").value;
+  theme.menuColumns = Number($("#theme-menuColumns").value);
+  theme.portfolioColumns = Number($("#theme-portfolioColumns").value);
+  return theme;
+}
+
 // ---- Save ----
 
 async function save(name, data, statusEl, saveBtn) {
@@ -379,9 +416,10 @@ async function loadContent() {
   content.site = await orFallback(remote.site, "/data/site.json", {});
   content.menu = await orFallback(remote.menu, "/data/menu.json", []);
   content.portfolio = await orFallback(remote.portfolio, "/data/portfolio.json", []);
+  content.theme = await orFallback(remote.theme, "/data/theme.json", {});
 }
 
-const EDIT_BUTTONS = ["#saveSite", "#saveMenu", "#savePortfolio", "#addMenu", "#addPortfolio"];
+const EDIT_BUTTONS = ["#saveSite", "#saveMenu", "#savePortfolio", "#addMenu", "#addPortfolio", "#saveTheme", "#resetTheme"];
 
 function setEditingEnabled(enabled) {
   EDIT_BUTTONS.forEach((selector) => {
@@ -450,10 +488,19 @@ function wireUi() {
     flagUnsaved($("#savePortfolio"));
   });
 
+  on("#saveTheme", "click", () => save("theme", collectTheme(), $("#themeStatus"), $("#saveTheme")));
+  on("#resetTheme", "click", () => {
+    fillTheme(DEFAULT_THEME);
+    flagUnsaved($("#saveTheme"));
+    setStatus($("#themeStatus"), "Original design restored — press Save appearance to publish it.", true, true);
+  });
+
   // Any typing inside a section lights up that section's Save button.
   on("#sectionSite", "input", () => flagUnsaved($("#saveSite")));
   on("#sectionMenu", "input", () => flagUnsaved($("#saveMenu")));
   on("#sectionPortfolio", "input", () => flagUnsaved($("#savePortfolio")));
+  on("#sectionTheme", "input", () => flagUnsaved($("#saveTheme")));
+  on("#sectionTheme", "change", () => flagUnsaved($("#saveTheme")));
 
   const heroUpload = $("#heroUpload");
   if (heroUpload) {
@@ -494,6 +541,7 @@ async function init() {
   fillSite();
   renderMenu();
   renderPortfolio();
+  fillTheme(content.theme);
   setEditingEnabled(true);
 }
 

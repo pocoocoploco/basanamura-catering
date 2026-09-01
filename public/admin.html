@@ -170,7 +170,7 @@
 
       /* ---------- Forms & cards ---------- */
       label { display: grid; gap: 4px; font-size: 0.8rem; font-weight: 700; color: var(--deep-red); }
-      input, textarea {
+      input, textarea, select {
         width: 100%;
         padding: 10px;
         border: 1px solid var(--line);
@@ -181,7 +181,12 @@
         background: var(--paper);
       }
       textarea { resize: vertical; min-height: 60px; }
-      input:focus, textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+      input:focus, textarea:focus, select:focus { outline: 2px solid var(--red); outline-offset: 1px; }
+      input[type="color"] {
+        height: 46px;
+        padding: 4px;
+        cursor: pointer;
+      }
       .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .stack { display: grid; gap: 10px; }
       .item-card {
@@ -272,7 +277,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v5</p>
+        <p class="ver">Admin v6</p>
       </div>
     </div>
 
@@ -290,6 +295,7 @@
           <button type="button" data-view="site" class="active">Business details <span class="dot"></span></button>
           <button type="button" data-view="menu">Menu <span class="dot"></span></button>
           <button type="button" data-view="portfolio">Portfolio <span class="dot"></span></button>
+          <button type="button" data-view="appearance">Appearance <span class="dot"></span></button>
         </nav>
         <div class="side-footer">
           <a href="/" target="_blank" rel="noopener">View site ↗</a>
@@ -363,12 +369,55 @@
               <p class="status" id="portfolioStatus"></p>
             </div>
           </section>
+
+          <section id="sectionTheme" data-view="appearance" hidden>
+            <p class="hint">Colours and layout of the public site. Press Save, then refresh the site to see the new look (up to a minute).</p>
+            <div class="stack">
+              <div class="grid2">
+                <label>Main colour (header &amp; buttons) <input type="color" id="theme-brand"></label>
+                <label>Accent colour (highlights &amp; title) <input type="color" id="theme-accent"></label>
+              </div>
+              <div class="grid2">
+                <label>Headings colour <input type="color" id="theme-deep"></label>
+                <label>Footer colour <input type="color" id="theme-footer"></label>
+              </div>
+              <div class="grid2">
+                <label>Page background <input type="color" id="theme-paper"></label>
+                <label>Hero text position
+                  <select id="theme-heroAlign">
+                    <option value="left">Left</option>
+                    <option value="center">Centre</option>
+                  </select>
+                </label>
+              </div>
+              <div class="grid2">
+                <label>Menu cards per row (desktop)
+                  <select id="theme-menuColumns">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                  </select>
+                </label>
+                <label>Portfolio cards per row (desktop)
+                  <select id="theme-portfolioColumns">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="row">
+              <button id="saveTheme" type="button">Save appearance</button>
+              <button id="resetTheme" type="button" class="ghost">Reset to original design</button>
+              <p class="status" id="themeStatus"></p>
+            </div>
+          </section>
         </div>
       </div>
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=4"></script>
+    <script src="/admin.js?v=5"></script>
     <script>
       // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
       // (old browser, network error, stale cache), say so instead of a dead page.
