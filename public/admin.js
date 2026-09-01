@@ -391,54 +391,60 @@ function renderInquiries(items) {
     return;
   }
 
+  const scroll = document.createElement("div");
+  scroll.className = "inq-scroll";
+  const table = document.createElement("table");
+  table.className = "inq-table";
+
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  ["Submitted", "Name", "Phone", "Event date", "Pax", "Message", ""].forEach((label) => {
+    const th = document.createElement("th");
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
   items.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "item-card";
-
-    const head = document.createElement("div");
-    head.className = "inq-head";
-    const who = document.createElement("strong");
-    who.textContent = item.name || "(no name)";
-    const when = document.createElement("span");
-    when.className = "inq-when";
-    when.textContent = formatWhen(item.createdAt);
-    head.appendChild(who);
-    head.appendChild(when);
-    card.appendChild(head);
-
-    const fields = document.createElement("div");
-    fields.className = "inq-fields";
-    const addField = (label, value, href) => {
-      if (!value) return;
-      const span = document.createElement("span");
-      span.textContent = `${label}: `;
-      if (href) {
-        const link = document.createElement("a");
-        link.href = href;
-        link.target = "_blank";
-        link.rel = "noopener";
-        link.textContent = value;
-        span.appendChild(link);
-      } else {
-        span.appendChild(document.createTextNode(value));
-      }
-      fields.appendChild(span);
+    const row = document.createElement("tr");
+    const cell = (className) => {
+      const td = document.createElement("td");
+      if (className) td.className = className;
+      row.appendChild(td);
+      return td;
     };
-    addField("Phone", item.phone, waLinkFor(item.phone));
-    addField("Event date", item.eventDate);
-    addField("Pax", item.pax);
-    addField("Form language", item.lang === "id" ? "Indonesian" : item.lang === "en" ? "English" : "");
-    card.appendChild(fields);
 
-    if (item.message) {
-      const message = document.createElement("p");
-      message.className = "inq-message";
-      message.textContent = item.message;
-      card.appendChild(message);
+    const whenCell = cell("inq-when");
+    whenCell.textContent = formatWhen(item.createdAt);
+    if (item.lang === "id" || item.lang === "en") {
+      const tag = document.createElement("span");
+      tag.className = "lang-tag";
+      tag.textContent = item.lang.toUpperCase();
+      whenCell.appendChild(tag);
     }
 
-    const actions = document.createElement("div");
-    actions.className = "item-actions";
+    cell().textContent = item.name || "—";
+
+    const phoneCell = cell();
+    const waLink = waLinkFor(item.phone);
+    if (item.phone && waLink) {
+      const link = document.createElement("a");
+      link.href = waLink;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = item.phone;
+      phoneCell.appendChild(link);
+    } else {
+      phoneCell.textContent = item.phone || "—";
+    }
+
+    cell().textContent = item.eventDate || "—";
+    cell().textContent = item.pax || "—";
+    cell("inq-msg").textContent = item.message || "—";
+
+    const actionCell = cell();
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "small ghost";
@@ -452,18 +458,20 @@ function renderInquiries(items) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: item.id })
         });
-        card.remove();
-        if (!listEl.children.length) renderInquiries([]);
+        row.remove();
+        if (!tbody.children.length) renderInquiries([]);
       } catch (error) {
         remove.disabled = false;
         setStatus($("#inquiriesStatus"), error.message, false);
       }
     });
-    actions.appendChild(remove);
-    card.appendChild(actions);
+    actionCell.appendChild(remove);
 
-    listEl.appendChild(card);
+    tbody.appendChild(row);
   });
+  table.appendChild(tbody);
+  scroll.appendChild(table);
+  listEl.appendChild(scroll);
 }
 
 async function loadInquiries() {
