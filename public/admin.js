@@ -9,6 +9,7 @@ function adminKey() {
 }
 
 function setStatus(el, message, ok, persist) {
+  if (!el) return;
   el.textContent = message;
   el.className = `status ${ok ? "ok" : "err"}`;
   if (ok && !persist) setTimeout(() => { if (el.textContent === message) el.textContent = ""; }, 6000);
@@ -328,13 +329,17 @@ async function save(name, data, statusEl, saveBtn) {
 // ---- Lock / unlock ----
 
 function showUnlocked() {
-  $("#loginView").hidden = true;
-  $("#appShell").hidden = false;
+  const login = $("#loginView");
+  const shell = $("#appShell");
+  if (login) login.hidden = true;
+  if (shell) shell.hidden = false;
 }
 
 function showLocked(message) {
-  $("#appShell").hidden = true;
-  $("#loginView").hidden = false;
+  const login = $("#loginView");
+  const shell = $("#appShell");
+  if (shell) shell.hidden = true;
+  if (login) login.hidden = false;
   if (message) setStatus($("#lockStatus"), message, false);
 }
 
@@ -352,6 +357,8 @@ async function tryUnlock() {
 
 // ---- Boot ----
 
+// Never throws: a failed source falls back to the bundled JSON, and a failed
+// fallback still leaves usable defaults so the portal keeps working.
 async function loadContent() {
   let remote = {};
   try {
@@ -359,33 +366,42 @@ async function loadContent() {
     if (response.ok) remote = await response.json();
   } catch (error) { /* fall back below */ }
 
-  const orFallback = async (value, path) => value || (await fetch(path)).json();
-  content.site = await orFallback(remote.site, "/data/site.json");
-  content.menu = await orFallback(remote.menu, "/data/menu.json");
-  content.portfolio = await orFallback(remote.portfolio, "/data/portfolio.json");
+  const orFallback = async (value, path, defaultValue) => {
+    if (value) return value;
+    try {
+      const response = await fetch(path);
+      if (response.ok) return await response.json();
+    } catch (error) { /* use default */ }
+    return defaultValue;
+  };
+  content.site = await orFallback(remote.site, "/data/site.json", {});
+  content.menu = await orFallback(remote.menu, "/data/menu.json", []);
+  content.portfolio = await orFallback(remote.portfolio, "/data/portfolio.json", []);
 }
 
-async function init() {
-  // Returning session: show the portal immediately (no login flash); the key
-  // is still verified against the server below and we fall back to the login
-  // screen if it no longer works.
-  if (adminKey()) showUnlocked();
+const EDIT_BUTTONS = ["#saveSite", "#saveMenu", "#savePortfolio", "#addMenu", "#addPortfolio"];
 
-  await loadContent();
-  fillSite();
-  renderMenu();
-  renderPortfolio();
+function setEditingEnabled(enabled) {
+  EDIT_BUTTONS.forEach((selector) => {
+    const button = $(selector);
+    if (button) button.disabled = !enabled;
+  });
+}
 
-  $("#unlockBtn").addEventListener("click", () => {
+// All wiring is synchronous — no network request happens before the controls
+// respond. Every lookup is null-guarded so one stale cached file can never
+// leave the whole page dead.
+function wireUi() {
+  $("#unlockBtn")?.addEventListener("click", () => {
     const value = $("#passwordInput").value;
     if (!value) return;
     localStorage.setItem(KEY_STORE, value);
     tryUnlock();
   });
-  $("#passwordInput").addEventListener("keydown", (event) => {
+  $("#passwordInput")?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") $("#unlockBtn").click();
   });
-  $("#lockBtn").addEventListener("click", () => {
+  $("#lockBtn")?.addEventListener("click", () => {
     localStorage.removeItem(KEY_STORE);
     $("#passwordInput").value = "";
     showLocked();
@@ -395,11 +411,11 @@ async function init() {
   document.querySelectorAll(".side-nav button").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
-  $("#menuToggle").addEventListener("click", openDrawer);
-  $("#backdrop").addEventListener("click", closeDrawer);
+  $("#menuToggle")?.addEventListener("click", openDrawer);
+  $("#backdrop")?.addEventListener("click", closeDrawer);
 
-  $("#saveSite").addEventListener("click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
-  $("#saveMenu").addEventListener("click", () => {
+  $("#saveSite")?.addEventListener("click", () => save("site", collectSite(), $("#siteStatus"), $("#saveSite")));
+  $("#saveMenu")?.addEventListener("click", () => {
     const menu = collectMenu();
     const missing = menu.findIndex((item) => !biVal(item.name).en);
     if (missing !== -1) {
@@ -408,15 +424,15 @@ async function init() {
     }
     save("menu", menu, $("#menuStatus"), $("#saveMenu"));
   });
-  $("#savePortfolio").addEventListener("click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus"), $("#savePortfolio")));
+  $("#savePortfolio")?.addEventListener("click", () => save("portfolio", collectPortfolio(), $("#portfolioStatus"), $("#savePortfolio")));
 
-  $("#addMenu").addEventListener("click", () => {
+  $("#addMenu")?.addEventListener("click", () => {
     content.menu = collectMenu();
     content.menu.push({ name: "", category: "", description: "", serving: "", image: "" });
     renderMenu();
     flagUnsaved($("#saveMenu"));
   });
-  $("#addPortfolio").addEventListener("click", () => {
+  $("#addPortfolio")?.addEventListener("click", () => {
     content.portfolio = collectPortfolio();
     content.portfolio.push({ event: "", pax: "", menu: "", note: "" });
     renderPortfolio();
@@ -424,19 +440,43 @@ async function init() {
   });
 
   // Any typing inside a section lights up that section's Save button.
-  $("#sectionSite").addEventListener("input", () => flagUnsaved($("#saveSite")));
-  $("#sectionMenu").addEventListener("input", () => flagUnsaved($("#saveMenu")));
-  $("#sectionPortfolio").addEventListener("input", () => flagUnsaved($("#savePortfolio")));
+  $("#sectionSite")?.addEventListener("input", () => flagUnsaved($("#saveSite")));
+  $("#sectionMenu")?.addEventListener("input", () => flagUnsaved($("#saveMenu")));
+  $("#sectionPortfolio")?.addEventListener("input", () => flagUnsaved($("#savePortfolio")));
 
-  wireUpload($("#heroUpload"), $("#siteStatus"), (url) => {
-    $("#site-heroImage").value = url;
-    $("#heroPreview").src = url;
-  }, $("#saveSite"));
-  $("#site-heroImage").addEventListener("change", (event) => {
+  const heroUpload = $("#heroUpload");
+  if (heroUpload) {
+    wireUpload(heroUpload, $("#siteStatus"), (url) => {
+      $("#site-heroImage").value = url;
+      $("#heroPreview").src = url;
+    }, $("#saveSite"));
+  }
+  $("#site-heroImage")?.addEventListener("change", (event) => {
     $("#heroPreview").src = event.target.value;
   });
+}
 
-  if (adminKey()) tryUnlock();
+async function init() {
+  // Controls first: the Sign in button must respond instantly, even while
+  // content is still loading from the server.
+  wireUi();
+  setEditingEnabled(false);
+
+  // Returning session: show the portal immediately (no login flash); the key
+  // is still verified against the server and we drop back to the login screen
+  // if it no longer works.
+  if (adminKey()) {
+    showUnlocked();
+    tryUnlock();
+  }
+
+  // Editing buttons stay disabled until this completes, so an early Save can
+  // never publish an empty page.
+  await loadContent();
+  fillSite();
+  renderMenu();
+  renderPortfolio();
+  setEditingEnabled(true);
 }
 
 init();
