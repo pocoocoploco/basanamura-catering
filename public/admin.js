@@ -56,7 +56,8 @@ const VIEW_TITLES = {
   menu: "Menu",
   portfolio: "Portfolio",
   appearance: "Appearance",
-  inquiries: "Inquiries"
+  inquiries: "Inquiries",
+  analytics: "Analytics"
 };
 
 function setView(view) {
@@ -69,6 +70,7 @@ function setView(view) {
   $("#viewTitle").textContent = VIEW_TITLES[view] || "";
   closeDrawer();
   if (view === "inquiries" && !inquiriesLoaded) loadInquiries();
+  if (view === "analytics" && !analyticsLoaded) loadAnalytics();
 }
 
 function openDrawer() {
@@ -492,6 +494,136 @@ async function loadInquiries() {
   }
 }
 
+// ---- Analytics dashboard ----
+
+let analyticsLoaded = false;
+let analyticsDays = 7;
+
+const LANG_NAMES = { en: "English", id: "Indonesian" };
+
+function statTile(label, value) {
+  const tile = document.createElement("div");
+  tile.className = "stat-tile";
+  const num = document.createElement("div");
+  num.className = "num";
+  num.textContent = String(value);
+  const lbl = document.createElement("div");
+  lbl.className = "lbl";
+  lbl.textContent = label;
+  tile.appendChild(num);
+  tile.appendChild(lbl);
+  return tile;
+}
+
+function breakdownCard(title, rows) {
+  const card = document.createElement("div");
+  card.className = "break-card";
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+  card.appendChild(heading);
+  if (!rows.length) {
+    const none = document.createElement("p");
+    none.className = "hint";
+    none.textContent = "No data yet.";
+    card.appendChild(none);
+    return card;
+  }
+  const max = Math.max(...rows.map((row) => row[1]), 1);
+  rows.forEach(([label, count]) => {
+    const row = document.createElement("div");
+    row.className = "break-row";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const value = document.createElement("strong");
+    value.textContent = String(count);
+    const meter = document.createElement("div");
+    meter.className = "meter";
+    const fill = document.createElement("span");
+    fill.style.width = `${Math.round((count / max) * 100)}%`;
+    meter.appendChild(fill);
+    row.appendChild(name);
+    row.appendChild(value);
+    row.appendChild(meter);
+    card.appendChild(row);
+  });
+  return card;
+}
+
+function renderAnalytics(data) {
+  const tiles = $("#statTiles");
+  tiles.innerHTML = "";
+  const clickRate = data.totals.views
+    ? `${Math.round((data.totals.waClicks / data.totals.views) * 100)}%`
+    : "0%";
+  tiles.appendChild(statTile("Visits", data.totals.views));
+  tiles.appendChild(statTile("Unique visitors", data.totals.uniques));
+  tiles.appendChild(statTile("WhatsApp clicks", data.totals.waClicks));
+  tiles.appendChild(statTile("Form inquiries", data.totals.inquiries));
+  tiles.appendChild(statTile("WhatsApp click rate", clickRate));
+
+  const chart = $("#visitsChart");
+  chart.innerHTML = "";
+  const maxViews = Math.max(1, ...data.perDay.map((d) => d.views));
+  const compact = data.perDay.length > 10;
+  data.perDay.forEach((d, index) => {
+    const col = document.createElement("div");
+    col.className = "bar-col";
+    col.title = `${d.day}: ${d.views} visits, ${d.uniques} unique, ${d.waClicks} WhatsApp clicks`;
+
+    const val = document.createElement("div");
+    val.className = "val";
+    val.textContent = !compact && d.views > 0 ? String(d.views) : compact && d.views === maxViews && d.views > 0 ? String(d.views) : "";
+
+    const bar = document.createElement("div");
+    bar.className = d.views ? "bar" : "bar zero";
+    bar.style.height = `${Math.max(2, Math.round((d.views / maxViews) * 120))}px`;
+
+    const day = document.createElement("div");
+    day.className = "day";
+    const showLabel = !compact || index % 5 === 0 || index === data.perDay.length - 1;
+    day.textContent = showLabel ? d.day.slice(8) + "/" + d.day.slice(5, 7) : "";
+
+    col.appendChild(val);
+    col.appendChild(bar);
+    col.appendChild(day);
+    chart.appendChild(col);
+  });
+
+  const breakdowns = $("#breakdowns");
+  breakdowns.innerHTML = "";
+  const langRows = Object.entries(data.langs)
+    .sort((a, b) => b[1] - a[1])
+    .map(([code, count]) => [LANG_NAMES[code] || code, count]);
+  const deviceRows = Object.entries(data.devices)
+    .sort((a, b) => b[1] - a[1])
+    .map(([device, count]) => [device === "mobile" ? "Mobile" : "Desktop", count]);
+  breakdowns.appendChild(breakdownCard("Language used", langRows));
+  breakdowns.appendChild(breakdownCard("Device", deviceRows));
+  breakdowns.appendChild(breakdownCard("Country", data.countries));
+  breakdowns.appendChild(breakdownCard("Came from", data.referrers));
+}
+
+async function loadAnalytics() {
+  const status = $("#analyticsStatus");
+  setStatus(status, "Loading…", true);
+  try {
+    const data = await api(`/api/analytics?days=${analyticsDays}`);
+    renderAnalytics(data);
+    setStatus(status, `Showing ${data.from} to ${data.to}.`, true, true);
+    analyticsLoaded = true;
+  } catch (error) {
+    setStatus(status, error.message, false);
+    if (error.status === 401) showLocked("Session expired — enter the password again.");
+  }
+}
+
+function setAnalyticsRange(days) {
+  analyticsDays = days;
+  $("#range7").classList.toggle("is-active", days === 7);
+  $("#range30").classList.toggle("is-active", days === 30);
+  loadAnalytics();
+}
+
 // ---- Save ----
 
 async function save(name, data, statusEl, saveBtn) {
@@ -634,6 +766,9 @@ function wireUi() {
   });
 
   on("#refreshInquiries", "click", loadInquiries);
+  on("#refreshAnalytics", "click", loadAnalytics);
+  on("#range7", "click", () => setAnalyticsRange(7));
+  on("#range30", "click", () => setAnalyticsRange(30));
 
   on("#saveTheme", "click", () => save("theme", collectTheme(), $("#themeStatus"), $("#saveTheme")));
   on("#resetTheme", "click", () => {

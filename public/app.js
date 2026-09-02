@@ -336,6 +336,7 @@ function setupForm() {
       keepalive: true
     }).catch(() => {});
 
+    track("inquiry");
     status.textContent = t("status_opening");
     window.location.href = whatsappUrl(message);
   });
@@ -391,6 +392,66 @@ function setupScrollExperience() {
   updateScrollMotion();
   window.addEventListener("scroll", updateScrollMotion, { passive: true });
   window.addEventListener("resize", updateScrollMotion);
+}
+
+// ---- Self-hosted analytics (cookie-free; skipped for the site owner) ----
+
+function trackingEnabled() {
+  // The owner's browser holds the admin key; don't count their own visits.
+  try {
+    return !localStorage.getItem("adminKey");
+  } catch (error) {
+    return true;
+  }
+}
+
+function visitorId() {
+  try {
+    let vid = localStorage.getItem("vid");
+    if (!vid) {
+      vid = Array.from(crypto.getRandomValues(new Uint8Array(8)))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      localStorage.setItem("vid", vid);
+    }
+    return vid;
+  } catch (error) {
+    return "";
+  }
+}
+
+function track(kind) {
+  if (!trackingEnabled()) return;
+  let ref = "";
+  try {
+    const referrerHost = document.referrer ? new URL(document.referrer).hostname : "";
+    if (referrerHost && referrerHost !== location.hostname) ref = referrerHost;
+  } catch (error) {
+    // keep ref empty
+  }
+  const body = JSON.stringify({ kind, vid: visitorId(), lang: currentLang, ref });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/track", new Blob([body], { type: "application/json" }));
+      return;
+    }
+  } catch (error) {
+    // fall through to fetch
+  }
+  fetch("/api/track", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function setupTracking() {
+  track("view");
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("[data-whatsapp-link], .whatsapp-float");
+    if (link) track("whatsapp_click");
+  });
 }
 
 // ---- Theme (set from the admin's Appearance page) ----
@@ -459,6 +520,7 @@ async function init() {
   setupForm();
   setLanguage(currentLang);
   setupScrollExperience();
+  setupTracking();
 }
 
 init();

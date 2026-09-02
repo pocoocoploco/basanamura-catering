@@ -21,6 +21,12 @@ enter the admin password, and edit:
 - **Appearance** — site colours (main, accent, headings, background, footer),
   cards per row for menu/portfolio, and hero text position, with a
   reset-to-original-design button. Defaults live in `data/theme.json`.
+- **Analytics** — self-hosted, cookie-free statistics: visits, unique
+  visitors, WhatsApp clicks, form inquiries, visits-per-day chart, and
+  language/device/country/referrer breakdowns over 7 or 30 days. Beacons are
+  stored in Blob under `analytics/<day>/`; no IP addresses are kept, the
+  country comes from Vercel's geo header, and visits from a browser signed in
+  to the admin are not counted.
 
 Press **Save** and the live site updates within a minute. No redeploy, no Git.
 

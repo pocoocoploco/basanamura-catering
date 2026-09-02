@@ -35,4 +35,14 @@ async function readJsonBody(req, maxBytes = 400_000) {
   return JSON.parse(raw.toString("utf8"));
 }
 
-module.exports = { authed, readRawBody, readJsonBody };
+// Public host of the connected Blob store, derived from the token
+// (vercel_blob_rw_<storeId>_<secret>). Lets read paths hit the CDN directly
+// instead of spending a metered list() operation per request.
+function blobStoreHost() {
+  const token = process.env.BLOB_READ_WRITE_TOKEN || "";
+  const parts = token.split("_");
+  if (parts.length < 5 || !parts[3]) return null;
+  return `${parts[3].toLowerCase()}.public.blob.vercel-storage.com`;
+}
+
+module.exports = { authed, readRawBody, readJsonBody, blobStoreHost };

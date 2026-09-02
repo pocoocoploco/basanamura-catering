@@ -186,6 +186,86 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ---- Analytics (mirrors api/track.js + api/analytics.js; local .jsonl) ----
+  const analyticsFile = path.join(dataDir, "analytics.jsonl");
+
+  if (req.method === "POST" && url.pathname === "/api/track") {
+    try {
+      const payload = JSON.parse((await collectBody(req, 4000)).toString("utf8"));
+      const kinds = ["view", "whatsapp_click", "inquiry"];
+      if (!kinds.includes(payload.kind)) {
+        res.writeHead(204).end();
+        return;
+      }
+      const ua = String(req.headers["user-agent"] || "");
+      const record = {
+        ts: new Date().toISOString(),
+        kind: payload.kind,
+        vid: String(payload.vid || "").slice(0, 32),
+        lang: String(payload.lang || "").slice(0, 8),
+        ref: String(payload.ref || "").slice(0, 100),
+        dev: /Mobi|Android|iPhone|iPad/i.test(ua) ? "mobile" : "desktop",
+        ctry: "ID"
+      };
+      fs.appendFileSync(analyticsFile, `${JSON.stringify(record)}\n`);
+    } catch (error) {
+      // Analytics must never break the site.
+    }
+    res.writeHead(204).end();
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/analytics") {
+    if (!authed(req)) {
+      sendJson(res, 401, { ok: false, message: "Wrong password." });
+      return;
+    }
+    let days = Number(url.searchParams.get("days")) || 7;
+    if (![7, 30].includes(days)) days = 7;
+    const dayKeys = [];
+    for (let i = days - 1; i >= 0; i--) {
+      dayKeys.push(new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10));
+    }
+    const records = fs.existsSync(analyticsFile)
+      ? fs.readFileSync(analyticsFile, "utf8").split("\n").filter(Boolean).map((line) => {
+          try { return JSON.parse(line); } catch (error) { return null; }
+        }).filter(Boolean)
+      : [];
+
+    const perDay = dayKeys.map((day) => ({ day, views: 0, uniques: 0, waClicks: 0, inquiries: 0 }));
+    const byDay = new Map(perDay.map((row) => [row.day, row]));
+    const uniqueSets = new Map(dayKeys.map((day) => [day, new Set()]));
+    const allVids = new Set();
+    const langs = {};
+    const devices = {};
+    const countries = {};
+    const referrers = {};
+    const totals = { views: 0, uniques: 0, waClicks: 0, inquiries: 0 };
+    for (const record of records) {
+      const row = byDay.get(String(record.ts || "").slice(0, 10));
+      if (!row) continue;
+      if (record.kind === "view") {
+        row.views += 1;
+        totals.views += 1;
+        if (record.vid) { uniqueSets.get(row.day).add(record.vid); allVids.add(record.vid); }
+        if (record.lang) langs[record.lang] = (langs[record.lang] || 0) + 1;
+        if (record.dev) devices[record.dev] = (devices[record.dev] || 0) + 1;
+        if (record.ctry) countries[record.ctry] = (countries[record.ctry] || 0) + 1;
+        const ref = record.ref || "(direct)";
+        referrers[ref] = (referrers[ref] || 0) + 1;
+      } else if (record.kind === "whatsapp_click") { row.waClicks += 1; totals.waClicks += 1; }
+      else if (record.kind === "inquiry") { row.inquiries += 1; totals.inquiries += 1; }
+    }
+    perDay.forEach((row) => { row.uniques = uniqueSets.get(row.day).size; });
+    totals.uniques = allVids.size;
+    const top = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n);
+    sendJson(res, 200, {
+      ok: true, days, from: dayKeys[0], to: dayKeys[dayKeys.length - 1],
+      totals, perDay, langs, devices, countries: top(countries, 6), referrers: top(referrers, 6)
+    });
+    return;
+  }
+
   // ---- Inquiries (mirrors api/inquiries.js; local storage is a .jsonl file) ----
   if (url.pathname === "/api/inquiries") {
     const inquiriesFile = path.join(dataDir, "inquiries.jsonl");

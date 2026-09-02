@@ -5,3 +5,6 @@ dist/
 
 # Local-only inquiry log — can contain customer names/phones, never commit it.
 data/inquiries.jsonl
+
+# Local-only analytics beacons.
+data/analytics.jsonl

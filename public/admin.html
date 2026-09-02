@@ -271,6 +271,27 @@
         font-size: 0.66rem;
         font-weight: 800;
       }
+      /* ---- Analytics ---- */
+      .range-switch { display: inline-flex; gap: 6px; }
+      .range-switch button.is-active { background: var(--deep-red); color: #fff; border-color: var(--deep-red); }
+      .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+      .stat-tile { padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+      .stat-tile .num { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: var(--deep-red); }
+      .stat-tile .lbl { margin-top: 4px; color: var(--muted); font-size: 0.78rem; }
+      .chart-block { margin-top: 14px; padding: 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+      .chart-title { margin: 0 0 12px; font-size: 0.85rem; color: var(--deep-red); }
+      .bar-chart { display: flex; align-items: stretch; gap: 2px; height: 170px; }
+      .bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+      .bar-col .val { min-height: 13px; font-size: 0.66rem; font-weight: 700; color: var(--ink); }
+      .bar-col .bar { width: 100%; max-width: 34px; min-height: 2px; background: var(--deep-red); border-radius: 4px 4px 0 0; }
+      .bar-col .bar.zero { background: var(--line); }
+      .bar-col .day { min-height: 12px; font-size: 0.6rem; color: var(--muted); white-space: nowrap; }
+      .breakdowns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+      .break-card { padding: 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+      .break-card h3 { margin: 0 0 10px; font-size: 0.82rem; color: var(--deep-red); }
+      .break-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 4px 0; font-size: 0.84rem; }
+      .break-row .meter { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--surface); overflow: hidden; }
+      .break-row .meter span { display: block; height: 100%; border-radius: 3px; background: var(--deep-red); }
 
       /* ---------- Mobile ---------- */
       .backdrop {
@@ -310,7 +331,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v10</p>
+        <p class="ver">Admin v11</p>
       </div>
     </div>
 
@@ -330,6 +351,7 @@
           <button type="button" data-view="portfolio">Portfolio <span class="dot"></span></button>
           <button type="button" data-view="appearance">Appearance <span class="dot"></span></button>
           <button type="button" data-view="inquiries">Inquiries <span class="dot"></span></button>
+          <button type="button" data-view="analytics">Analytics <span class="dot"></span></button>
         </nav>
         <div class="side-footer">
           <a href="/" target="_blank" rel="noopener">View site ↗</a>
@@ -413,6 +435,24 @@
             <div id="inquiriesList"></div>
           </section>
 
+          <section id="sectionAnalytics" data-view="analytics" hidden>
+            <p class="hint">Website statistics kept in your own storage — no third-party analytics service, no cookies, and visits from this signed-in browser are not counted. Collection starts from the day this feature went live.</p>
+            <div class="row" style="margin-top: 0;">
+              <div class="range-switch" role="group" aria-label="Date range">
+                <button id="range7" type="button" class="small ghost is-active">Last 7 days</button>
+                <button id="range30" type="button" class="small ghost">Last 30 days</button>
+              </div>
+              <button id="refreshAnalytics" type="button" class="ghost small">Refresh</button>
+              <p class="status" id="analyticsStatus"></p>
+            </div>
+            <div id="statTiles" class="stat-tiles"></div>
+            <div class="chart-block">
+              <h3 class="chart-title">Visits per day</h3>
+              <div id="visitsChart" class="bar-chart"></div>
+            </div>
+            <div id="breakdowns" class="breakdowns"></div>
+          </section>
+
           <section id="sectionTheme" data-view="appearance" hidden>
             <p class="hint">Colours and layout of the public site. Press Save, then refresh the site to see the new look (up to a minute).</p>
             <div class="stack">
@@ -460,7 +500,7 @@
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=9"></script>
+    <script src="/admin.js?v=10"></script>
     <script>
       // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
       // (old browser, network error, stale cache), say so instead of a dead page.
