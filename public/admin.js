@@ -202,12 +202,21 @@ function renderMenu() {
       ["Remove", () => removeItem("menu", index)]
     ]);
 
-    const imgRow = document.createElement("div");
-    imgRow.className = "img-row";
-    const thumb = document.createElement("img");
-    thumb.alt = "";
-    thumb.src = item.image || "";
+    // Full-width photo preview on top of the card; a dish-plate icon shows
+    // through (via CSS background) when there is no photo yet.
+    const photo = document.createElement("img");
+    photo.className = "card-photo";
+    photo.alt = "";
+    const setPhoto = (url) => {
+      if (url) photo.src = url;
+      else photo.removeAttribute("src");
+    };
+    setPhoto(item.image || "");
+    photo.addEventListener("error", () => photo.removeAttribute("src"));
+    card.appendChild(photo);
+
     const controls = document.createElement("div");
+    controls.className = "photo-controls";
     addField(controls, "Photo URL", item.image || "", "image", false);
     const uploadBtn = document.createElement("button");
     uploadBtn.type = "button";
@@ -218,16 +227,14 @@ function renderMenu() {
     fileInput.accept = "image/jpeg,image/png,image/webp";
     uploadBtn.appendChild(fileInput);
     controls.appendChild(uploadBtn);
-    imgRow.appendChild(thumb);
-    imgRow.appendChild(controls);
-    card.appendChild(imgRow);
+    card.appendChild(controls);
 
     wireUpload(fileInput, $("#menuStatus"), (url) => {
       $(`[data-f="image"]`, card).value = url;
-      thumb.src = url;
+      setPhoto(url);
     }, $("#saveMenu"));
     $(`[data-f="image"]`, card).addEventListener("change", (event) => {
-      thumb.src = event.target.value;
+      setPhoto(event.target.value.trim());
     });
 
     addBiFields(card, "Name", item.name, "name", false);
