@@ -276,7 +276,7 @@ function renderGallery(items) {
   band.hidden = false;
   track.innerHTML = "";
 
-  const slotWidth = 274; // desktop slot incl. margin; overshoot on mobile is harmless
+  const slotWidth = 288; // desktop slot incl. margin; overshoot on mobile is harmless
   const targetWidth = Math.max(window.innerWidth || 0, 1600);
   const repeats = Math.max(1, Math.ceil(targetWidth / (urls.length * slotWidth)));
   const half = [];
