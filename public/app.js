@@ -165,6 +165,24 @@ function whatsappUrl(message) {
   return `https://wa.me/${siteData.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
+// Wikimedia's Special:Redirect serves multi-megabyte originals; asking its
+// thumbnail service for a sane width makes placeholder photos load fast.
+function optimizedImageUrl(url, width) {
+  const value = String(url || "");
+  if (
+    /^https:\/\/commons\.wikimedia\.org\/wiki\/Special:Redirect\/file\//.test(value) &&
+    !/[?&]width=/.test(value)
+  ) {
+    return `${value}${value.includes("?") ? "&" : "?"}width=${width}`;
+  }
+  return value;
+}
+
+// Shown while a dish photo loads, when a dish has no photo yet, and when a
+// photo fails to download — never a blank box.
+const IMAGE_PLACEHOLDER =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'><rect width='400' height='300' fill='%23fff7e6'/><g fill='none' stroke='%23e3cf8f' stroke-width='4' stroke-linecap='round'><circle cx='200' cy='162' r='34'/><path d='M177 118c4 5 4 10 0 15M200 112c4 5 4 10 0 15M223 118c4 5 4 10 0 15'/></g><circle cx='200' cy='162' r='16' fill='%23f3e6b8'/></svg>";
+
 function applyI18n() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = t(element.dataset.i18n);
@@ -181,7 +199,7 @@ function setSiteText(site) {
   });
 
   document.querySelectorAll("[data-site-img]").forEach((element) => {
-    const url = site[element.dataset.siteImg];
+    const url = optimizedImageUrl(site[element.dataset.siteImg], 1600);
     // Only assign when the URL actually changes, so toggling language never
     // forces the (external) image to re-download and flash blank.
     if (url && element.getAttribute("src") !== url) element.src = url;
@@ -223,7 +241,8 @@ function renderMenu(items) {
       )
       .join("");
     grid.querySelectorAll(".menu-card img").forEach((img, i) => {
-      img.src = pick(items[i].image);
+      img.src = optimizedImageUrl(pick(items[i].image), 800) || IMAGE_PLACEHOLDER;
+      img.addEventListener("error", () => { img.src = IMAGE_PLACEHOLDER; }, { once: true });
     });
   }
 
