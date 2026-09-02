@@ -8,7 +8,7 @@ const { blobStoreHost } = require("./_utils.js");
 // Reads go straight to the store's CDN host (derived from the token) — free
 // data transfer instead of a metered list() operation per page view. list()
 // remains only as a fallback if the direct host ever stops resolving.
-const KEYS = ["site", "menu", "portfolio", "theme"];
+const KEYS = ["site", "menu", "portfolio", "theme", "gallery"];
 
 async function fetchJson(url) {
   try {
@@ -22,7 +22,7 @@ async function fetchJson(url) {
 
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  const out = { site: null, menu: null, portfolio: null, theme: null };
+  const out = { site: null, menu: null, portfolio: null, theme: null, gallery: null };
 
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     res.status(200).json(out);

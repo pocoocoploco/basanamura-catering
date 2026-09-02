@@ -18,6 +18,10 @@ enter the admin password, and edit:
 - **Business details** — name, taglines (EN/ID), phone, WhatsApp, email, hero photo.
 - **Menu** — add/remove/reorder dishes, bilingual text, photo upload per dish.
 - **Portfolio** — example events, bilingual text.
+- **Gallery** — photos for the running strip shown under "Why customers call"
+  on the site. Scrolls right-to-left and loops endlessly with any number of
+  photos (maximum 35). Upload several at once, reorder with arrows, remove
+  with ✕. Stored as `gallery` content (`data/gallery.json` is the empty seed).
 - **Appearance** — site colours (main, accent, headings, background, footer),
   cards per row for menu/portfolio, and hero text position, with a
   reset-to-original-design button. Defaults live in `data/theme.json`.

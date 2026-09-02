@@ -28,7 +28,7 @@ function setStatus(el, message, ok, persist) {
 
 // Save buttons light up ("— unsaved!") whenever their section has changes
 // that have not been published yet; the sidebar shows a dot on that view.
-const BTN_VIEW = { saveSite: "site", saveMenu: "menu", savePortfolio: "portfolio", saveTheme: "appearance" };
+const BTN_VIEW = { saveSite: "site", saveMenu: "menu", savePortfolio: "portfolio", saveTheme: "appearance", saveGallery: "gallery" };
 
 function navItemFor(saveBtn) {
   const view = saveBtn && BTN_VIEW[saveBtn.id];
@@ -55,6 +55,7 @@ const VIEW_TITLES = {
   site: "Business details",
   menu: "Menu",
   portfolio: "Portfolio",
+  gallery: "Gallery",
   appearance: "Appearance",
   inquiries: "Inquiries",
   analytics: "Analytics"
@@ -331,6 +332,103 @@ function collectSite() {
   site.maxPax = Number($("#site-maxPax").value) || content.site.maxPax || 1;
   site.tagline = biOut($("#site-tagline-en").value, $("#site-tagline-id").value);
   return site;
+}
+
+// ---- Gallery (running photo strip) ----
+
+const GALLERY_MAX = 35;
+let galleryItems = [];
+
+function fillGallery(items) {
+  galleryItems = (Array.isArray(items) ? items : [])
+    .filter((url) => typeof url === "string" && url)
+    .slice(0, GALLERY_MAX);
+  renderGalleryAdmin();
+}
+
+function renderGalleryAdmin() {
+  const grid = $("#galleryGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const counter = $("#galleryCount");
+  if (counter) counter.textContent = `${galleryItems.length} / ${GALLERY_MAX} photos`;
+
+  if (!galleryItems.length) {
+    const empty = document.createElement("p");
+    empty.className = "hint";
+    empty.textContent = "No photos yet. Upload photos to start the running strip on the website.";
+    grid.appendChild(empty);
+    return;
+  }
+
+  galleryItems.forEach((url, index) => {
+    const tile = document.createElement("div");
+    tile.className = "gallery-tile";
+    const img = document.createElement("img");
+    img.alt = "";
+    img.src = url;
+    img.addEventListener("error", () => img.removeAttribute("src"));
+    const actions = document.createElement("div");
+    actions.className = "tile-actions";
+    const makeButton = (label, handler, title) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "small ghost";
+      button.textContent = label;
+      if (title) button.title = title;
+      button.addEventListener("click", handler);
+      return button;
+    };
+    actions.appendChild(makeButton("↑", () => moveGalleryItem(index, -1), "Move earlier"));
+    actions.appendChild(makeButton("↓", () => moveGalleryItem(index, 1), "Move later"));
+    actions.appendChild(makeButton("✕", () => removeGalleryItem(index), "Remove"));
+    tile.appendChild(img);
+    tile.appendChild(actions);
+    grid.appendChild(tile);
+  });
+}
+
+function moveGalleryItem(index, delta) {
+  const target = index + delta;
+  if (target < 0 || target >= galleryItems.length) return;
+  [galleryItems[index], galleryItems[target]] = [galleryItems[target], galleryItems[index]];
+  renderGalleryAdmin();
+  flagUnsaved($("#saveGallery"));
+}
+
+function removeGalleryItem(index) {
+  galleryItems.splice(index, 1);
+  renderGalleryAdmin();
+  flagUnsaved($("#saveGallery"));
+}
+
+async function handleGalleryUpload(fileInput) {
+  const files = [...(fileInput.files || [])];
+  fileInput.value = "";
+  if (!files.length) return;
+  const status = $("#galleryStatus");
+  const room = GALLERY_MAX - galleryItems.length;
+  if (!room) {
+    setStatus(status, `The gallery is full (maximum ${GALLERY_MAX} photos). Remove some first.`, false);
+    return;
+  }
+  if (files.length > room) {
+    setStatus(status, `Only ${room} more photo(s) fit — uploading the first ${room}.`, false);
+    files.length = room;
+  }
+  for (let i = 0; i < files.length; i++) {
+    setStatus(status, `Uploading photo ${i + 1} of ${files.length}…`, true, true);
+    try {
+      const url = await uploadImage(files[i]);
+      galleryItems.push(url);
+      renderGalleryAdmin();
+      flagUnsaved($("#saveGallery"));
+    } catch (error) {
+      setStatus(status, error.message, false);
+      return;
+    }
+  }
+  setStatus(status, `Uploaded ${files.length} photo(s) ✓ — now press Save gallery to publish.`, true, true);
 }
 
 // ---- Appearance form ----
@@ -694,9 +792,10 @@ async function loadContent() {
   content.menu = await orFallback(remote.menu, "/data/menu.json", []);
   content.portfolio = await orFallback(remote.portfolio, "/data/portfolio.json", []);
   content.theme = await orFallback(remote.theme, "/data/theme.json", {});
+  content.gallery = await orFallback(remote.gallery, "/data/gallery.json", []);
 }
 
-const EDIT_BUTTONS = ["#saveSite", "#saveMenu", "#savePortfolio", "#addMenu", "#addPortfolio", "#saveTheme", "#resetTheme"];
+const EDIT_BUTTONS = ["#saveSite", "#saveMenu", "#savePortfolio", "#addMenu", "#addPortfolio", "#saveTheme", "#resetTheme", "#saveGallery", "#galleryUploadBtn"];
 
 function setEditingEnabled(enabled) {
   EDIT_BUTTONS.forEach((selector) => {
@@ -770,6 +869,9 @@ function wireUi() {
   on("#range7", "click", () => setAnalyticsRange(7));
   on("#range30", "click", () => setAnalyticsRange(30));
 
+  on("#saveGallery", "click", () => save("gallery", galleryItems.slice(), $("#galleryStatus"), $("#saveGallery")));
+  on("#galleryUpload", "change", () => handleGalleryUpload($("#galleryUpload")));
+
   on("#saveTheme", "click", () => save("theme", collectTheme(), $("#themeStatus"), $("#saveTheme")));
   on("#resetTheme", "click", () => {
     fillTheme(DEFAULT_THEME);
@@ -824,6 +926,7 @@ async function init() {
   renderMenu();
   renderPortfolio();
   fillTheme(content.theme);
+  fillGallery(content.gallery);
   setEditingEnabled(true);
 }
 

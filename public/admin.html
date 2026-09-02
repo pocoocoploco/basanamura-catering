@@ -271,6 +271,29 @@
         font-size: 0.66rem;
         font-weight: 800;
       }
+      /* ---- Gallery ---- */
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .gallery-tile {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .gallery-tile img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        background: #fff center / 56px no-repeat
+          url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><g fill='none' stroke='%23e3cf8f' stroke-width='4' stroke-linecap='round'><circle cx='48' cy='58' r='26'/><path d='M30 20c3 4 3 8 0 12M48 14c3 4 3 8 0 12M66 20c3 4 3 8 0 12'/></g><circle cx='48' cy='58' r='12' fill='%23f3e6b8'/></svg>");
+      }
+      .tile-actions { display: flex; justify-content: space-between; gap: 4px; padding: 6px; }
+
       /* ---- Analytics ---- */
       .range-switch { display: inline-flex; gap: 6px; }
       .range-switch button.is-active { background: var(--deep-red); color: #fff; border-color: var(--deep-red); }
@@ -331,7 +354,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v11</p>
+        <p class="ver">Admin v12</p>
       </div>
     </div>
 
@@ -349,6 +372,7 @@
           <button type="button" data-view="site" class="active">Business details <span class="dot"></span></button>
           <button type="button" data-view="menu">Menu <span class="dot"></span></button>
           <button type="button" data-view="portfolio">Portfolio <span class="dot"></span></button>
+          <button type="button" data-view="gallery">Gallery <span class="dot"></span></button>
           <button type="button" data-view="appearance">Appearance <span class="dot"></span></button>
           <button type="button" data-view="inquiries">Inquiries <span class="dot"></span></button>
           <button type="button" data-view="analytics">Analytics <span class="dot"></span></button>
@@ -435,6 +459,19 @@
             <div id="inquiriesList"></div>
           </section>
 
+          <section id="sectionGallery" data-view="gallery" hidden>
+            <p class="hint">Photos for the running strip shown under &ldquo;Why customers call&rdquo; on the website. It scrolls right to left and loops endlessly, even with only a few photos. Maximum 35 photos; use the arrows to set the order.</p>
+            <div class="row" style="margin-top: 0;">
+              <button id="galleryUploadBtn" type="button" class="gold upload-btn">Upload photos
+                <input type="file" id="galleryUpload" accept="image/jpeg,image/png,image/webp" multiple>
+              </button>
+              <button id="saveGallery" type="button">Save gallery</button>
+              <span class="hint" style="margin: 0;" id="galleryCount"></span>
+              <p class="status" id="galleryStatus"></p>
+            </div>
+            <div id="galleryGrid" class="gallery-grid"></div>
+          </section>
+
           <section id="sectionAnalytics" data-view="analytics" hidden>
             <p class="hint">Website statistics kept in your own storage — no third-party analytics service, no cookies, and visits from this signed-in browser are not counted. Collection starts from the day this feature went live.</p>
             <div class="row" style="margin-top: 0;">
@@ -500,7 +537,7 @@
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=10"></script>
+    <script src="/admin.js?v=11"></script>
     <script>
       // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
       // (old browser, network error, stale cache), say so instead of a dead page.

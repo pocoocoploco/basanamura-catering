@@ -157,7 +157,8 @@ async function loadContent() {
     orFallback(remote.site, dataFallbacks.site, {}),
     orFallback(remote.menu, dataFallbacks.menu, []),
     orFallback(remote.portfolio, dataFallbacks.portfolio, []),
-    orFallback(remote.theme, dataFallbacks.theme, {})
+    orFallback(remote.theme, dataFallbacks.theme, {}),
+    orFallback(remote.gallery, "/data/gallery.json", [])
   ]);
 }
 
@@ -253,6 +254,47 @@ function renderMenu(items) {
       node.textContent = pick(item[node.dataset.field]);
     });
   });
+}
+
+// Running photo strip (right to left, endless). The photo set is repeated
+// until one "half" of the track is wider than the screen, then the half is
+// duplicated; animating to -50% loops seamlessly with any number of photos.
+function renderGallery(items) {
+  const band = document.querySelector("#galleryBand");
+  const track = document.querySelector("#galleryTrack");
+  if (!band || !track) return;
+
+  const urls = (Array.isArray(items) ? items : [])
+    .map((item) => (typeof item === "string" ? item : (item && item.image) || ""))
+    .filter(Boolean)
+    .slice(0, 35);
+
+  if (!urls.length) {
+    band.hidden = true;
+    return;
+  }
+  band.hidden = false;
+  track.innerHTML = "";
+
+  const slotWidth = 274; // desktop slot incl. margin; overshoot on mobile is harmless
+  const targetWidth = Math.max(window.innerWidth || 0, 1600);
+  const repeats = Math.max(1, Math.ceil(targetWidth / (urls.length * slotWidth)));
+  const half = [];
+  for (let r = 0; r < repeats; r++) half.push(...urls);
+
+  [...half, ...half].forEach((url) => {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.src = optimizedImageUrl(url, 600);
+    img.addEventListener("error", () => { img.src = IMAGE_PLACEHOLDER; }, { once: true });
+    track.appendChild(img);
+  });
+
+  // Constant speed regardless of photo count: duration follows track length.
+  const halfWidth = track.scrollWidth / 2;
+  track.style.setProperty("--marquee-duration", `${Math.max(12, Math.round(halfWidth / 70))}s`);
 }
 
 function renderPortfolio(items) {
@@ -510,8 +552,10 @@ async function init() {
   document.documentElement.lang = currentLang;
 
   let themeData;
-  [siteData, menuData, portfolioData, themeData] = await loadContent();
+  let galleryData;
+  [siteData, menuData, portfolioData, themeData, galleryData] = await loadContent();
   applyTheme(themeData);
+  renderGallery(galleryData);
 
   document.title = siteData.businessName;
   document.querySelector("#year").textContent = new Date().getFullYear();
