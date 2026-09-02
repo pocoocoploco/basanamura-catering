@@ -159,31 +159,8 @@
       .hamburger { display: none; }
       .top-link { color: var(--deep-red); font-weight: 700; font-size: 0.86rem; text-decoration: none; }
       .content { padding: 18px; width: 100%; }
-      /* Text-heavy forms stay a readable width; list pages use the full window. */
+      /* Text-heavy forms stay a readable width; lists use the full window. */
       #sectionSite .stack, #sectionTheme .stack { max-width: 980px; }
-      #menuList, #portfolioList {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-        gap: 14px;
-        margin-top: 14px;
-        align-items: start;
-      }
-      #menuList .item-card, #portfolioList .item-card { margin-top: 0; }
-      .card-photo {
-        width: 100%;
-        aspect-ratio: 4 / 3;
-        object-fit: cover;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: #fff center / 76px no-repeat
-          url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><g fill='none' stroke='%23e3cf8f' stroke-width='4' stroke-linecap='round'><circle cx='48' cy='58' r='26'/><path d='M30 20c3 4 3 8 0 12M48 14c3 4 3 8 0 12M66 20c3 4 3 8 0 12'/></g><circle cx='48' cy='58' r='12' fill='%23f3e6b8'/></svg>");
-      }
-      .photo-controls {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 10px;
-        align-items: end;
-      }
 
       section[data-view] {
         padding: 16px;
@@ -333,7 +310,7 @@
         </label>
         <button id="unlockBtn" type="button">Sign in</button>
         <p class="status" id="lockStatus"></p>
-        <p class="ver">Admin v9</p>
+        <p class="ver">Admin v10</p>
       </div>
     </div>
 
@@ -483,7 +460,7 @@
     </div>
 
     <!-- Bump ?v= whenever admin.js changes, so cached copies can never pair a stale script with fresh markup. -->
-    <script src="/admin.js?v=8"></script>
+    <script src="/admin.js?v=9"></script>
     <script>
       // Watchdog in plain old JavaScript: if admin.js failed to load or crashed
       // (old browser, network error, stale cache), say so instead of a dead page.
